@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 18, 2025 at 03:30 PM
+-- Generation Time: Aug 19, 2025 at 01:21 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -30,27 +30,26 @@ SET time_zone = "+00:00";
 CREATE TABLE `class` (
   `id` int(11) NOT NULL,
   `name` varchar(50) NOT NULL,
-  `school_id` int(11) NOT NULL,
-  `school_code` varchar(50) NOT NULL
+  `school_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `class`
 --
 
-INSERT INTO `class` (`id`, `name`, `school_id`, `school_code`) VALUES
-(36, '7B', 1, 'BOWA'),
-(37, '7R', 1, 'BOWA'),
-(38, '8R', 1, 'BOWA'),
-(39, '8B', 1, 'BOWA'),
-(40, '9R', 1, 'BOWA'),
-(41, '9B', 1, 'BOWA'),
-(42, '7B', 3, 'PUNGU'),
-(43, '7R', 3, 'PUNGU'),
-(44, '8B', 3, 'PUNGU'),
-(45, '8R', 3, 'PUNGU'),
-(46, '9B', 3, 'PUNGU'),
-(47, '9R', 3, 'PUNGU');
+INSERT INTO `class` (`id`, `name`, `school_id`) VALUES
+(36, '7B', 1),
+(37, '7R', 1),
+(38, '8R', 1),
+(39, '8B', 1),
+(40, '9R', 1),
+(41, '9B', 1),
+(42, '7B', 3),
+(43, '7R', 3),
+(44, '8B', 3),
+(45, '8R', 3),
+(46, '9B', 3),
+(47, '9R', 3);
 
 -- --------------------------------------------------------
 
@@ -107,12 +106,21 @@ INSERT INTO `score` (`id`, `std_id`, `subject_id`, `term`, `exam_type`, `class_i
 (19, 26, 34, 'Term 1', 'CAT', 42, 70, 'E.E', 'Excellent', 3, 25, '2025-08-18 13:02:36'),
 (20, 26, 40, 'Term 1', 'CAT', 42, 56, 'M.E', 'Good', 3, 25, '2025-08-18 13:10:59'),
 (21, 26, 41, 'Term 1', 'CAT', 42, 58, 'M.E', 'Good', 3, 25, '2025-08-18 13:11:52'),
-(22, 26, 38, 'Term 1', 'CAT', 42, 90, 'E.E', 'Excellent', 3, 25, '2025-08-18 13:12:11'),
+(22, 26, 38, 'Term 1', 'CAT', 42, 69, 'M.E', 'Good', 3, 25, '2025-08-18 13:12:11'),
 (23, 26, 35, 'Term 1', 'CAT', 42, 78, 'E.E', 'Excellent', 3, 25, '2025-08-18 13:12:29'),
 (24, 26, 36, 'Term 1', 'CAT', 42, 45, 'A.E', 'Average', 3, 25, '2025-08-18 13:12:38'),
 (25, 26, 37, 'Term 1', 'CAT', 42, 38, 'A.E', 'Average', 3, 25, '2025-08-18 13:12:46'),
-(26, 26, 39, 'Term 1', 'CAT', 42, 69, 'M.E', 'Good', 3, 25, '2025-08-18 13:12:57'),
-(27, 26, 43, 'Term 1', 'CAT', 42, 50, 'M.E', 'Good', 3, 25, '2025-08-18 13:14:01');
+(26, 26, 39, 'Term 1', 'CAT', 42, 76, 'E.E', 'Excellent', 3, 25, '2025-08-18 13:12:57'),
+(27, 26, 43, 'Term 1', 'CAT', 42, 80, 'E.E', 'Excellent', 3, 25, '2025-08-18 13:14:01'),
+(28, 27, 40, 'Term 1', 'CAT', 42, 70, 'E.E', 'Excellent', 3, 25, '2025-08-19 08:30:32'),
+(29, 27, 41, 'Term 1', 'CAT', 42, 70, 'E.E', 'Excellent', 3, 25, '2025-08-19 09:32:08'),
+(30, 27, 34, 'Term 1', 'CAT', 42, 89, 'E.E', 'Excellent', 3, 25, '2025-08-19 09:32:55'),
+(31, 27, 38, 'Term 1', 'CAT', 42, 55, 'M.E', 'Good', 3, 25, '2025-08-19 09:33:05'),
+(32, 27, 43, 'Term 1', 'CAT', 42, 57, 'M.E', 'Good', 3, 25, '2025-08-19 09:33:15'),
+(33, 27, 35, 'Term 1', 'CAT', 42, 68, 'M.E', 'Good', 3, 25, '2025-08-19 09:33:24'),
+(34, 27, 36, 'Term 1', 'CAT', 42, 90, 'E.E', 'Excellent', 3, 25, '2025-08-19 09:33:33'),
+(35, 27, 37, 'Term 1', 'CAT', 42, 67, 'M.E', 'Good', 3, 25, '2025-08-19 09:33:42'),
+(36, 27, 39, 'Term 1', 'CAT', 42, 34, 'A.E', 'Average', 3, 25, '2025-08-19 09:33:52');
 
 -- --------------------------------------------------------
 
@@ -142,7 +150,8 @@ CREATE TABLE `student` (
 
 INSERT INTO `student` (`id`, `firstname`, `lastname`, `gender`, `dob`, `guardian_name`, `guardian_phone`, `address`, `status`, `photo`, `admno`, `school_id`, `class_id`) VALUES
 (25, 'samuel', 'mwathi', 'Male', '2025-08-06', 'KKK', '0765432350', 'hhhh', 'active', 'uploads/students/1755520183_1755067844_IHSAN0.png', 56789, 1, 40),
-(26, 'RASHID', 'ABDALA', 'Male', '2025-08-06', 'BAMBAULO', '0765432350', 'HJKL', 'active', 'uploads/students/1755521720_1755067844_IHSAN0.png', 9089, 3, 42);
+(26, 'RASHID', 'ABDALA', 'Male', '2025-08-06', 'BAMBAULO', '0765432350', 'HJKL', 'active', 'uploads/students/1755521720_1755067844_IHSAN0.png', 9089, 3, 42),
+(27, 'abdul', 'juma', 'Male', '2025-08-06', 'gggg', 'ooooo', 'home', 'active', 'uploads/students/1755592144_1755067844_IHSAN0.png', 3456, 3, 42);
 
 -- --------------------------------------------------------
 
@@ -180,7 +189,16 @@ INSERT INTO `student_subject` (`id`, `student_id`, `school_id`, `subject_id`, `c
 (88, 26, 3, 39, 42),
 (89, 26, 3, 40, 42),
 (90, 26, 3, 41, 42),
-(98, 26, 3, 43, 42);
+(98, 26, 3, 43, 42),
+(99, 27, 3, 34, 42),
+(100, 27, 3, 35, 42),
+(101, 27, 3, 36, 42),
+(102, 27, 3, 37, 42),
+(103, 27, 3, 38, 42),
+(104, 27, 3, 39, 42),
+(105, 27, 3, 40, 42),
+(106, 27, 3, 41, 42),
+(114, 27, 3, 43, 42);
 
 -- --------------------------------------------------------
 
@@ -309,7 +327,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `FirstName`, `LastName`, `email`, `password`, `role`, `school_id`, `created_at`) VALUES
 (83, 'Abdalla', 'Juma', 'sudi@gmail.com', '$2y$10$e9ilZwRO9SvXg8JjzS3Cd.6roVI6qK1DJX0rYDiw5MscET.PT8j3W', 'user', 1, '2025-08-14 07:25:55'),
 (164, 'ISSA', 'Mwikali', 'issa@gmail.com', '$2y$10$35s9Xho7nNrQo81rW0TXH.9yAqEsyIbiQbqBiSsUEM2jOKh8W3h3a', 'teacher', 2, '2025-08-14 09:39:49'),
-(165, 'Omar', 'Sufiani', 'hommiedelaco@gmail.com', '$2y$10$Y7NXG4eKbXldOnU6Dxd3W.zgyg5Ud5GWy2RWUz/d7kOde.QLDkn8W', 'admin', 3, '2025-08-14 09:44:15'),
+(165, 'Omar', 'Sufiani', 'hommiedelaco@gmail.com', '$2y$10$Y7NXG4eKbXldOnU6Dxd3W.zgyg5Ud5GWy2RWUz/d7kOde.QLDkn8W', 'teacher', 3, '2025-08-14 09:44:15'),
 (166, 'Taabu', 'Mafimbo', 'T@GMAIL.COM', '$2y$10$uGibWi0TPFV4g4bUMWvEdeK3OMuefnymi.Nn3aYFOqMB/LkUlrX3W', 'admin', 2, '2025-08-14 11:29:53'),
 (167, 'Ali', 'Sudi', 'a@gmail.com', '$2y$10$53Fzq6qg3PAkTAWxVWB.1uiehNwKPJcaqkZj8j5meFiRYBUjW4MZW', 'user', 3, '2025-08-18 10:18:32');
 
@@ -401,7 +419,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `class`
 --
 ALTER TABLE `class`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `school`
@@ -413,19 +431,19 @@ ALTER TABLE `school`
 -- AUTO_INCREMENT for table `score`
 --
 ALTER TABLE `score`
-  MODIFY `id` int(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` int(30) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `student`
 --
 ALTER TABLE `student`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `student_subject`
 --
 ALTER TABLE `student_subject`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=99;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=115;
 
 --
 -- AUTO_INCREMENT for table `subject`

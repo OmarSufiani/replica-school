@@ -61,41 +61,58 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary" href="add_school.php">➕ Add School</a>
                     <a class="btn btn-primary" href="manage_users.php">➕ Manage Admins</a>
                     <a class="btn btn-primary" href="view_schools.php">➕ Manage Schools</a>
-             
                     <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-
-                
-
                 <?php endif; ?>
 
 
 
                 <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a class="btn btn-primary" href="add_student.php">➕ Add Student</a>
-                    <a class="btn btn-primary" href="add_teacher.php">➕ Add Teacher</a>
-                     <a class="btn btn-primary" href="manage_teachers.php">➕ Manage_Teachers</a>
-                    <a class="btn btn-primary" href="add_subject.php">➕ Add Subject</a>
-                    <a class="btn btn-primary" href="add_class.php">➕ Add Class</a>
-                    <a class="btn btn-primary" href="tsubject_class.php">➕ Teacher Subject/Class</a>
-                    <a class="btn btn-primary" href="student_subject.php">📚 Add Student_Subject_Class</a>
-                    <a class="btn btn-primary mb-3" href="add_score.php">➕ Add Score</a>
-                    <a class="btn btn-primary" href="delete_student.php">➕ Update Student </a>
-                     <a class="btn btn-primary" href="delete_scores.php">➕ Delete_scores </a>
-                    <a class="btn btn-primary" href="file.php">➕ All files</a>
-                     <a class="btn btn-primary" href="csv.php">📊 View Report</a>
-                <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
-               
-                <a class="btn btn-primary" href="view_students.php">➕ View Students</a>
+                    <a class="btn btn-primary" href="#">➕ Number of Teacher</a>
+                     <a class="btn btn-primary" href="csv.php">📊 View  School Report</a>
                      <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
                       <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
+                <?php endif; ?>
+
+                <?php if ($_SESSION['role'] === 'dean'): ?>
+                    <a class="btn btn-primary" href="add_class.php">➕ Add Class</a>
+                    <a class="btn btn-primary" href="add_subject.php">➕ Add Subjects</a>
+                    <a class="btn btn-primary" href="add_student.php">➕ Add Student</a>
+                    <a class="btn btn-primary" href="student_subject.php">📚 Add Student_Subject_Class</a>
+                    <a class="btn btn-primary" href="view_students.php">➕ View Students</a>
+                    <a class="btn btn-primary" href="add_teacher.php">➕ Add Teacher</a>
+                    <a class="btn btn-primary" href="tsubject_class.php">➕ Teacher Subject/Class</a>
+                    <a class="btn btn-primary" href="delete_student.php">➕ View Students </a>
+                     <a class="btn btn-primary" href="delete_scores.php">➕ Manage Scores </a>
+                    <a class="btn btn-primary" href="file.php">➕ All files</a>
+                    <a class="btn btn-primary" href="csv.php">📊 View Report</a>
+                <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
+                <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
+                <a class="btn btn-primary" href="manage_teachers.php">➕ Manage_Teachers</a>
 
                 <?php endif; ?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     <?php if ($_SESSION['role'] === 'teacher'): ?>
                     <a class="btn btn-primary mb-3" href="add_score.php">➕ Add Score</a>
-                 
-                     <a class="btn btn-primary" href="delete_scores.php">➕ Delete_scores </a>
-                    
-                     <a class="btn btn-primary" href="csv.php">📊 View Report</a>
+                  <a class="btn btn-primary mb-3" href="view_results.php">➕ View Results</a>
                 <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
                 <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 

@@ -6,7 +6,7 @@ include 'db.php';
 if (
     !isset($_SESSION['user_id']) || 
     !isset($_SESSION['school_id']) || 
-    ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'teacher')
+    ($_SESSION['role'] !== 'dean' && $_SESSION['role'] !== 'teacher')
 ) {
     die("❌ Unauthorized access");
 }
@@ -43,10 +43,10 @@ $result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
 <head>
-    <meta charset="UTF-8">
+    
     <title>Manage Teachers</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-5">

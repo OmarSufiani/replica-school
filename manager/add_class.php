@@ -11,29 +11,18 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['school_id'])) {
 $school_id = $_SESSION['school_id'];
 $message = '';
 
-// Fetch school code
-$school_code = '';
-$schoolStmt = $conn->prepare("SELECT school_code FROM school WHERE id = ?");
-$schoolStmt->bind_param("i", $school_id);
-$schoolStmt->execute();
-$schoolResult = $schoolStmt->get_result();
-if ($schoolResult->num_rows > 0) {
-    $schoolRow = $schoolResult->fetch_assoc();
-    $school_code = strtoupper($schoolRow['school_code']);
-}
-$schoolStmt->close();
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
-    $school_code_input = trim($_POST['school_code']); // from form
+ 
 
     if ($name === '') {
         $message = "❌ Class name cannot be empty.";
     } else {
         // Insert class with school_id and school_code
-        $stmt = $conn->prepare("INSERT INTO class (name, school_id, school_code) VALUES (?, ?, ?)");
-        $stmt->bind_param("sis", $name, $school_id, $school_code_input);
+        $stmt = $conn->prepare("INSERT INTO class (name, school_id) VALUES ( ?, ?)");
+        $stmt->bind_param("si", $name, $school_id);
 
         if ($stmt->execute()) {
             $_SESSION['message'] = "✅ Class added successfully!";
@@ -83,10 +72,7 @@ if (isset($_SESSION['message'])) {
             <?php endif; ?>
 
             <form method="POST" class="d-grid gap-3">
-                <div class="form-group">
-                    <label for="school_code" class="form-label">School Code</label>
-                    <input type="text" name="school_code" id="school_code" class="form-control" value="<?= htmlspecialchars($school_code) ?>" readonly>
-                </div>
+             
                 <div class="form-group">
                     <label for="name" class="form-label">Class Name</label>
                     <input type="text" name="name" id="name" class="form-control" placeholder="e.g., 7BLUE, 7RED" required>

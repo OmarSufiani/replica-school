@@ -19,7 +19,7 @@ if ($role === 'Superadmin') {
         GROUP BY s.id
         ORDER BY sc.school_name, s.firstname
     ";
-} elseif ($role === 'admin') {
+} elseif ($role === 'dean') {
     $school_id = $_SESSION['school_id'];
     $query = "
         SELECT s.*, sc.school_name, c.name AS class_name
