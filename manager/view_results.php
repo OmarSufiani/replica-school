@@ -105,15 +105,17 @@ if (isset($_POST['filter']) || isset($_POST['download_csv'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Teacher Results</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
 
 <div class="container">
+<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">&larr; Back to Dashboard</a>
+
     <h3 class="mb-4">Teacher - View & Download Results</h3>
 
     <!-- Filter Form -->

@@ -67,8 +67,9 @@ if (!isset($_SESSION['user_id'])) {
 
 
                 <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a class="btn btn-primary" href="#">➕ Number of Teacher</a>
+                    <a class="btn btn-primary" href="all_users.php">➕ Statistics</a>
                      <a class="btn btn-primary" href="csv.php">📊 View  School Report</a>
+                    <a class="btn btn-primary" href="active_students.php">➕ Students Subject Auto Assign to Next Year</a>
                      <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
                       <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 <?php endif; ?>
@@ -86,29 +87,11 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary" href="file.php">➕ All files</a>
                     <a class="btn btn-primary" href="csv.php">📊 View Report</a>
                 <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
+                <a class="btn btn-primary" href="active_students.php">➕ Students Subject Auto Assign to Next YEAR</a>
                 <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 <a class="btn btn-primary" href="manage_teachers.php">➕ Manage_Teachers</a>
 
                 <?php endif; ?>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                     <?php if ($_SESSION['role'] === 'teacher'): ?>
                     <a class="btn btn-primary mb-3" href="add_score.php">➕ Add Score</a>
