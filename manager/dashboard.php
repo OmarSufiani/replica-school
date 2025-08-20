@@ -87,6 +87,7 @@ if (!isset($_SESSION['user_id'])) {
                      <a class="btn btn-primary" href="delete_scores.php">➕ Manage Scores </a>
                     <a class="btn btn-primary" href="file.php">➕ All files</a>
                     <a class="btn btn-primary" href="csv.php">📊 View Report</a>
+                         <a class="btn btn-primary" href="view_exams.php">➕ Exams</a>
                 <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
                 <a class="btn btn-primary" href="active_students.php">➕ Students Subject Auto Assign to Next YEAR</a>
                 <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
@@ -98,6 +99,8 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary mb-3" href="add_score.php">➕ Add Score</a>
                   <a class="btn btn-primary mb-3" href="view_results.php">➕ View Results</a>
                 <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
+                <a class="btn btn-primary" href="upload_exam.php">➕ Upload Exam</a>
+                    <a class="btn btn-primary" href="view_exams.php">➕ Exams</a>
                 <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 
 
