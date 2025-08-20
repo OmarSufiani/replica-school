@@ -28,13 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($password !== $confirm) {
         $error = "Passwords do not match.";
     } else {
-        $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
-        $check->bind_param("s", $email);
+        // ✅ Check email only within the same school
+        $check = $conn->prepare("SELECT id FROM users WHERE email = ? AND school_id = ?");
+        $check->bind_param("si", $email, $school_id);
         $check->execute();
         $check->store_result();
 
         if ($check->num_rows > 0) {
-            $error = "Email is already registered.";
+            $error = "Email is already registered for this school.";
         } else {
             $hashed = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $conn->prepare("INSERT INTO users (email, firstName, lastName, password, role, school_id) VALUES (?, ?, ?, ?, ?, ?)");
@@ -55,9 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!DOCTYPE html>
-
+<html>
 <head>
-         <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register | Bandari Maritime Academy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
