@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 19, 2025 at 01:21 PM
+-- Generation Time: Aug 20, 2025 at 01:21 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -64,17 +64,18 @@ CREATE TABLE `school` (
   `address` text NOT NULL,
   `phone` varchar(25) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `created_at` date NOT NULL DEFAULT current_timestamp()
+  `created_at` date NOT NULL DEFAULT current_timestamp(),
+  `status` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `school`
 --
 
-INSERT INTO `school` (`id`, `school_name`, `school_code`, `address`, `phone`, `email`, `created_at`) VALUES
-(1, 'BOWA JUNIOR SECONDARY', 'BOWA', 'KOMBANI', '098765789', 'BOWA@GMAIL.COM', '2025-08-11'),
-(2, 'ZIBANI JUNIOR SECONDARY', 'ZIBANI', 'NGOMBENI', '0987655433', 'kingi@gmail.com', '2025-08-14'),
-(3, 'PUNGU JUNIOR SECONDARY', 'PUNGU', 'PUNGU', '0987655433', 'P@GMAIL.COM', '2025-08-18');
+INSERT INTO `school` (`id`, `school_name`, `school_code`, `address`, `phone`, `email`, `created_at`, `status`) VALUES
+(1, 'BOWA JUNIOR SECONDARY', 'BOWA', 'KOMBANI', '098765789', 'BOWA@GMAIL.COM', '2025-08-11', 1),
+(2, 'ZIBANI JUNIOR SECONDARY', 'ZIBANI', 'NGOMBENI', '0987655433', 'kingi@gmail.com', '2025-08-14', 0),
+(3, 'PUNGU JUNIOR SECONDARY', 'PUNGU', 'PUNGU', '0987655433', 'P@GMAIL.COM', '2025-08-18', 1);
 
 -- --------------------------------------------------------
 
@@ -150,8 +151,8 @@ CREATE TABLE `student` (
 
 INSERT INTO `student` (`id`, `firstname`, `lastname`, `gender`, `dob`, `guardian_name`, `guardian_phone`, `address`, `status`, `photo`, `admno`, `school_id`, `class_id`) VALUES
 (25, 'samuel', 'mwathi', 'Male', '2025-08-06', 'KKK', '0765432350', 'hhhh', 'active', 'uploads/students/1755520183_1755067844_IHSAN0.png', 56789, 1, 40),
-(26, 'RASHID', 'ABDALA', 'Male', '2025-08-06', 'BAMBAULO', '0765432350', 'HJKL', 'active', 'uploads/students/1755521720_1755067844_IHSAN0.png', 9089, 3, 42),
-(27, 'abdul', 'juma', 'Male', '2025-08-06', 'gggg', 'ooooo', 'home', 'active', 'uploads/students/1755592144_1755067844_IHSAN0.png', 3456, 3, 42);
+(26, 'RASHID', 'ABDALA', 'Male', '2025-08-06', 'BAMBAULO', '0765432350', 'HJKL', 'active', 'uploads/students/1755521720_1755067844_IHSAN0.png', 9089, 3, 45),
+(27, 'abdul', 'juma', 'Male', '2025-08-06', 'gggg', 'ooooo', 'home', 'active', 'uploads/students/1755592144_1755067844_IHSAN0.png', 3456, 3, 45);
 
 -- --------------------------------------------------------
 
@@ -164,41 +165,42 @@ CREATE TABLE `student_subject` (
   `student_id` int(11) DEFAULT NULL,
   `school_id` int(11) NOT NULL,
   `subject_id` int(11) DEFAULT NULL,
-  `class_id` int(11) NOT NULL
+  `class_id` int(11) NOT NULL,
+  `year` date NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `student_subject`
 --
 
-INSERT INTO `student_subject` (`id`, `student_id`, `school_id`, `subject_id`, `class_id`) VALUES
-(67, 25, 1, 1, 40),
-(68, 25, 1, 11, 40),
-(69, 25, 1, 14, 40),
-(70, 25, 1, 15, 40),
-(71, 25, 1, 28, 40),
-(72, 25, 1, 29, 40),
-(73, 25, 1, 30, 40),
-(74, 25, 1, 31, 40),
-(82, 25, 1, 33, 40),
-(83, 26, 3, 34, 42),
-(84, 26, 3, 35, 42),
-(85, 26, 3, 36, 42),
-(86, 26, 3, 37, 42),
-(87, 26, 3, 38, 42),
-(88, 26, 3, 39, 42),
-(89, 26, 3, 40, 42),
-(90, 26, 3, 41, 42),
-(98, 26, 3, 43, 42),
-(99, 27, 3, 34, 42),
-(100, 27, 3, 35, 42),
-(101, 27, 3, 36, 42),
-(102, 27, 3, 37, 42),
-(103, 27, 3, 38, 42),
-(104, 27, 3, 39, 42),
-(105, 27, 3, 40, 42),
-(106, 27, 3, 41, 42),
-(114, 27, 3, 43, 42);
+INSERT INTO `student_subject` (`id`, `student_id`, `school_id`, `subject_id`, `class_id`, `year`) VALUES
+(67, 25, 1, 1, 40, '2025-08-19'),
+(68, 25, 1, 11, 40, '2025-08-19'),
+(69, 25, 1, 14, 40, '2025-08-19'),
+(70, 25, 1, 15, 40, '2025-08-19'),
+(71, 25, 1, 28, 40, '2025-08-19'),
+(72, 25, 1, 29, 40, '2025-08-19'),
+(73, 25, 1, 30, 40, '2025-08-19'),
+(74, 25, 1, 31, 40, '2025-08-19'),
+(82, 25, 1, 33, 40, '2025-08-19'),
+(83, 26, 3, 34, 42, '2025-08-19'),
+(84, 26, 3, 35, 42, '2025-08-19'),
+(85, 26, 3, 36, 42, '2025-08-19'),
+(86, 26, 3, 37, 42, '2025-08-19'),
+(87, 26, 3, 38, 42, '2025-08-19'),
+(88, 26, 3, 39, 42, '2025-08-19'),
+(89, 26, 3, 40, 42, '2025-08-19'),
+(90, 26, 3, 41, 42, '2025-08-19'),
+(98, 26, 3, 43, 42, '2025-08-19'),
+(99, 27, 3, 34, 42, '2025-08-19'),
+(100, 27, 3, 35, 42, '2025-08-19'),
+(101, 27, 3, 36, 42, '2025-08-19'),
+(102, 27, 3, 37, 42, '2025-08-19'),
+(103, 27, 3, 38, 42, '2025-08-19'),
+(104, 27, 3, 39, 42, '2025-08-19'),
+(105, 27, 3, 40, 42, '2025-08-19'),
+(106, 27, 3, 41, 42, '2025-08-19'),
+(114, 27, 3, 43, 42, '2025-08-19');
 
 -- --------------------------------------------------------
 
@@ -327,7 +329,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `FirstName`, `LastName`, `email`, `password`, `role`, `school_id`, `created_at`) VALUES
 (83, 'Abdalla', 'Juma', 'sudi@gmail.com', '$2y$10$e9ilZwRO9SvXg8JjzS3Cd.6roVI6qK1DJX0rYDiw5MscET.PT8j3W', 'user', 1, '2025-08-14 07:25:55'),
 (164, 'ISSA', 'Mwikali', 'issa@gmail.com', '$2y$10$35s9Xho7nNrQo81rW0TXH.9yAqEsyIbiQbqBiSsUEM2jOKh8W3h3a', 'teacher', 2, '2025-08-14 09:39:49'),
-(165, 'Omar', 'Sufiani', 'hommiedelaco@gmail.com', '$2y$10$Y7NXG4eKbXldOnU6Dxd3W.zgyg5Ud5GWy2RWUz/d7kOde.QLDkn8W', 'teacher', 3, '2025-08-14 09:44:15'),
+(165, 'Omar', 'Sufian', 'hommiedelaco@gmail.com', '$2y$10$3CQ6v7sQwa1LBLirHbre/up7QsQMiZ8Q6B4DG.ferTwb7Kd/T46ti', 'Superadmin', 2, '2025-08-14 09:44:15'),
 (166, 'Taabu', 'Mafimbo', 'T@GMAIL.COM', '$2y$10$uGibWi0TPFV4g4bUMWvEdeK3OMuefnymi.Nn3aYFOqMB/LkUlrX3W', 'admin', 2, '2025-08-14 11:29:53'),
 (167, 'Ali', 'Sudi', 'a@gmail.com', '$2y$10$53Fzq6qg3PAkTAWxVWB.1uiehNwKPJcaqkZj8j5meFiRYBUjW4MZW', 'user', 3, '2025-08-18 10:18:32');
 
