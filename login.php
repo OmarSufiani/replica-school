@@ -18,16 +18,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $result->fetch_assoc();
 
     if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['FirstName'] = $user['FirstName'];
-        $_SESSION['LastName'] = $user['LastName'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['school_id'] = $user['school_id'];
-       
+        // ✅ Check school status
+        $school_id = $user['school_id'];
+        $school_stmt = $conn->prepare("SELECT status FROM school WHERE id = ?");
+        $school_stmt->bind_param("i", $school_id);
+        $school_stmt->execute();
+        $school_result = $school_stmt->get_result();
+        $school = $school_result->fetch_assoc();
+
+        if ($school && $school['status'] == 1) {
+            // School active → allow login
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['FirstName'] = $user['FirstName'];
+            $_SESSION['LastName'] = $user['LastName'];
+            $_SESSION['email'] = $user['Email'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['school_id'] = $user['school_id'];
+
             header('Location: manager/dashboard.php');
-        
-        exit;
+            exit;
+        } else {
+            // School disabled
+            $error = "This school has been disabled due to pending payments. Please contact admin.";
+        }
+        $school_stmt->close();
     } else {
         $error = "Invalid Email or password.";
     }
@@ -36,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

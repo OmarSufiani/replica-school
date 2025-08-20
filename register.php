@@ -6,8 +6,8 @@ $error = '';
 $success = '';
 $schools = [];
 
-// Fetch schools for dropdown
-$school_query = $conn->query("SELECT id, school_name FROM school ORDER BY school_name ASC");
+// Fetch ONLY active schools for dropdown
+$school_query = $conn->query("SELECT id, school_name FROM school WHERE status = 1 ORDER BY school_name ASC");
 while ($row = $school_query->fetch_assoc()) {
     $schools[] = $row;
 }

@@ -37,65 +37,77 @@ if (isset($_POST['promote'])) {
         $class_name = $student['class_name'];
         $student_name = $student['firstname'] . ' ' . $student['lastname'];
 
-        // Find next class
-        $next_class_sql = "SELECT id, name FROM `class` WHERE id > ? AND school_id=? ORDER BY id ASC LIMIT 1";
-        $nc_stmt = $conn->prepare($next_class_sql);
-        if (!$nc_stmt) { die("Prepare failed: " . $conn->error); }
-        $nc_stmt->bind_param("ii", $class_id, $school_id);
-        $nc_stmt->execute();
-        $nc_result = $nc_stmt->get_result();
+        // Parse class name to increment number but keep suffix
+        if (preg_match('/(\d+)([A-Z]*)/i', $class_name, $matches)) {
+            $class_number = intval($matches[1]);
+            $class_suffix = isset($matches[2]) ? $matches[2] : '';
+            $next_class_name = ($class_number + 1) . $class_suffix;
 
-        if ($nc_result->num_rows > 0) {
-            $next_class = $nc_result->fetch_assoc();
-            $next_class_id = $next_class['id'];
-            $next_class_name = $next_class['name'];
+            // Find next class by name
+            $next_class_sql = "SELECT id, name FROM `class` WHERE name=? AND school_id=?";
+            $nc_stmt = $conn->prepare($next_class_sql);
+            if (!$nc_stmt) { die("Prepare failed: " . $conn->error); }
+            $nc_stmt->bind_param("si", $next_class_name, $school_id);
+            $nc_stmt->execute();
+            $nc_result = $nc_stmt->get_result();
 
-            // Update class
-            $update_class_sql = "UPDATE student SET class_id=? WHERE id=?";
-            $uc_stmt = $conn->prepare($update_class_sql);
-            if (!$uc_stmt) { die("Prepare failed: " . $conn->error); }
-            $uc_stmt->bind_param("ii", $next_class_id, $student_id);
-            $uc_stmt->execute();
+            if ($nc_result->num_rows > 0) {
+                $next_class = $nc_result->fetch_assoc();
+                $next_class_id = $next_class['id'];
+                $next_class_name = $next_class['name'];
 
-            // Copy subjects
-            $sub_sql = "SELECT subject_id FROM student_subject WHERE student_id=? AND class_id=? AND year=?";
-            $sub_stmt = $conn->prepare($sub_sql);
-            if (!$sub_stmt) { die("Prepare failed: " . $conn->error); }
-            $sub_stmt->bind_param("iii", $student_id, $class_id, $current_year);
-            $sub_stmt->execute();
-            $sub_result = $sub_stmt->get_result();
+                // Update class
+                $update_class_sql = "UPDATE student SET class_id=? WHERE id=?";
+                $uc_stmt = $conn->prepare($update_class_sql);
+                $uc_stmt->bind_param("ii", $next_class_id, $student_id);
+                $uc_stmt->execute();
 
-            while ($sub = $sub_result->fetch_assoc()) {
-                $subject_id = $sub['subject_id'];
+                // Copy subjects
+                $sub_sql = "SELECT subject_id FROM student_subject WHERE student_id=? AND class_id=? AND year=?";
+                $sub_stmt = $conn->prepare($sub_sql);
+                $sub_stmt->bind_param("iii", $student_id, $class_id, $current_year);
+                $sub_stmt->execute();
+                $sub_result = $sub_stmt->get_result();
 
-                $check_sql = "SELECT id FROM student_subject WHERE student_id=? AND subject_id=? AND class_id=? AND year=?";
-                $check_stmt = $conn->prepare($check_sql);
-                if (!$check_stmt) { die("Prepare failed: " . $conn->error); }
-                $check_stmt->bind_param("iiii", $student_id, $subject_id, $next_class_id, $new_year);
-                $check_stmt->execute();
-                $check_result = $check_stmt->get_result();
+                while ($sub = $sub_result->fetch_assoc()) {
+                    $subject_id = $sub['subject_id'];
 
-                if ($check_result->num_rows == 0) {
-                    $insert_sql = "INSERT INTO student_subject (student_id, subject_id, class_id, year) VALUES (?,?,?,?)";
-                    $insert_stmt = $conn->prepare($insert_sql);
-                    if (!$insert_stmt) { die("Prepare failed: " . $conn->error); }
-                    $insert_stmt->bind_param("iiii", $student_id, $subject_id, $next_class_id, $new_year);
-                    $insert_stmt->execute();
+                    $check_sql = "SELECT id FROM student_subject WHERE student_id=? AND subject_id=? AND class_id=? AND year=?";
+                    $check_stmt = $conn->prepare($check_sql);
+                    $check_stmt->bind_param("iiii", $student_id, $subject_id, $next_class_id, $new_year);
+                    $check_stmt->execute();
+                    $check_result = $check_stmt->get_result();
+
+                    if ($check_result->num_rows == 0) {
+                        $insert_sql = "INSERT INTO student_subject (student_id, subject_id, class_id, year) VALUES (?,?,?,?)";
+                        $insert_stmt = $conn->prepare($insert_sql);
+                        $insert_stmt->bind_param("iiii", $student_id, $subject_id, $next_class_id, $new_year);
+                        $insert_stmt->execute();
+                    }
                 }
+
+                $_SESSION['promoted_students'][] = ['id' => $student_id, 'old_class' => $class_id];
+                $promoted_list[] = [
+                    'name' => $student_name,
+                    'old_class' => $class_name,
+                    'new_class' => $next_class_name
+                ];
+
+            } else {
+                // No next class → graduate
+                $grad_sql = "UPDATE student SET status='graduated' WHERE id=?";
+                $grad_stmt = $conn->prepare($grad_sql);
+                $grad_stmt->bind_param("i", $student_id);
+                $grad_stmt->execute();
+
+                $_SESSION['graduated_students'][] = $student_id;
+                $graduated_list[] = $student_name;
             }
 
-            $_SESSION['promoted_students'][] = ['id' => $student_id, 'old_class' => $class_id];
-            $promoted_list[] = [
-                'name' => $student_name,
-                'old_class' => $class_name,
-                'new_class' => $next_class_name
-            ];
-
         } else {
-            // Graduated
+            // Invalid class name → graduate
             $grad_sql = "UPDATE student SET status='graduated' WHERE id=?";
             $grad_stmt = $conn->prepare($grad_sql);
-            if (!$grad_stmt) { die("Prepare failed: " . $conn->error); }
             $grad_stmt->bind_param("i", $student_id);
             $grad_stmt->execute();
 
@@ -131,9 +143,9 @@ if (isset($_POST['cancel'])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Promote Students</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>

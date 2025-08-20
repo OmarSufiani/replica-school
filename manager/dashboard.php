@@ -61,6 +61,7 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary" href="add_school.php">➕ Add School</a>
                     <a class="btn btn-primary" href="manage_users.php">➕ Manage Admins</a>
                     <a class="btn btn-primary" href="view_schools.php">➕ Manage Schools</a>
+                     <a class="btn btn-primary" href="manage_schools.php">➕ Desable School</a>
                     <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 <?php endif; ?>
 
