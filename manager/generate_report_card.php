@@ -52,11 +52,11 @@ function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
     $class_name = $class['class_name'] ?? 'Unknown';
     $school_name = $class['school_name'] ?? 'Unknown School';
 
-    // Extract stream number (e.g., "8" from "8B") for ranking
+    // Extract stream number (e.g., "7" from "7B")
     preg_match('/\d+/', $class_name, $matches);
     $stream_number = $matches[0] ?? null;
 
-    // Get student scores for term, exam_type, year
+    // Get student scores
     $sql = "
         SELECT s.id AS subject_id, s.name AS subject_name, sc.Score, sc.performance, sc.tcomments
         FROM score AS sc
@@ -77,302 +77,212 @@ function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
         $studentScores[] = $row;
     }
 
-    // Count total students in the stream
-    $stmtCount = $conn->prepare("
-        SELECT COUNT(DISTINCT s.id) AS cnt
-        FROM student s
-        JOIN student_subject ss ON s.id = ss.student_id
-        JOIN class c ON ss.class_id = c.id
-        WHERE c.name LIKE CONCAT(?, '%') AND ss.school_id = ?
-    ");
-    $stmtCount->bind_param("si", $stream_number, $school_id);
-    $stmtCount->execute();
-    $countResult = $stmtCount->get_result()->fetch_assoc();
-    $stmtCount->close();
-    $totalStudents = $countResult['cnt'] ?? 0;
-
-    // Subject ranks within stream
-    $subjectRanks = [];
-    foreach ($studentScores as $scoreEntry) {
-        $subject_id = $scoreEntry['subject_id'];
-        $rankSql = "
-            SELECT sc.std_id, sc.Score 
-            FROM score sc
-            JOIN student_subject ss ON sc.std_id = ss.student_id
-            JOIN class c ON ss.class_id = c.id
-            WHERE sc.subject_id = ? AND sc.term = ? AND sc.exam_type = ? AND YEAR(sc.created_at) = ? 
-              AND c.name LIKE CONCAT(?, '%') AND sc.school_id = ?
-            ORDER BY sc.Score DESC
-        ";
-        $rankStmt = $conn->prepare($rankSql);
-        if (!$rankStmt) die("Prepare failed (rank query): " . $conn->error);
-        $rankStmt->bind_param("issisi", $subject_id, $term, $exam_type, $year, $stream_number, $school_id);
-        $rankStmt->execute();
-        $rankResult = $rankStmt->get_result();
-        $rankStmt->close();
-
-        $rank = 1;
-        $prevScore = null;
-        $studentRank = null;
-        $count = 0;
-
-        while ($r = $rankResult->fetch_assoc()) {
-            $count++;
-            if ($prevScore !== null && $r['Score'] < $prevScore) $rank = $count;
-            if ($r['std_id'] == $student_id) $studentRank = $rank;
-            $prevScore = $r['Score'];
-        }
-
-        $subjectRanks[$subject_id] = [
-            'rank' => $studentRank ?? $count,
-            'total' => $count
-        ];
-    }
-
-    // Average score
-    $avgScoreSql = "SELECT AVG(Score) as avgScore FROM score WHERE std_id = ? AND term = ? AND exam_type = ? AND YEAR(created_at) = ? AND school_id = ?";
-    $avgStmt = $conn->prepare($avgScoreSql);
-    $avgStmt->bind_param("issii", $student_id, $term, $exam_type, $year, $school_id);
-    $avgStmt->execute();
-    $avgResult = $avgStmt->get_result()->fetch_assoc();
-    $avgStmt->close();
-    $studentAvg = floatval($avgResult['avgScore'] ?? 0);
-
-// // --- CLASS RANK ---
-$classAvgSql = "
-    SELECT sc.std_id, AVG(sc.Score) as avgScore 
-    FROM score sc
-    JOIN student_subject ss ON sc.std_id = ss.student_id
-    WHERE ss.class_id = ? AND sc.term = ? AND sc.exam_type = ? 
-      AND YEAR(sc.created_at) = ? AND sc.school_id = ?
-    GROUP BY sc.std_id
-    ORDER BY avgScore DESC
-";
-$classAvgStmt = $conn->prepare($classAvgSql);
-$classAvgStmt->bind_param("issii", $class_id, $term, $exam_type, $year, $school_id);
-$classAvgStmt->execute();
-$classAvgResult = $classAvgStmt->get_result();
-$classAvgStmt->close();
-
-$studentClassRank = null;   // will hold this student's class position
-$rankPos = 1;               // current rank counter
-$prevAvg = null;            // to handle ties
-$countClass = 0;            // total students in class
-
-while ($row = $classAvgResult->fetch_assoc()) {
-    $countClass++;  // count students
-    if ($prevAvg !== null && floatval($row['avgScore']) < $prevAvg) {
-        $rankPos = $countClass; // rank only changes when score drops
-    }
-    if ($row['std_id'] == $student_id) {
-        $studentClassRank = $rankPos; // save this student's rank
-    }
-    $prevAvg = floatval($row['avgScore']);
-}
-if ($studentClassRank === null) $studentClassRank = $countClass;
-$totalStudentsInClass = $countClass;  // ✅ class size
-
-// === Check how many streams exist for this level ===
-$streamCountSql = "SELECT COUNT(DISTINCT c.name) as totalStreams
-    FROM class c
-    WHERE c.name LIKE CONCAT(?, '%')";
-$stmt = $conn->prepare($streamCountSql);
-$stmt->bind_param("s", $streamLevel);
-$stmt->execute();
-$streamCountResult = $stmt->get_result()->fetch_assoc();
-$totalStreams = $streamCountResult['totalStreams'] ?? 1;
-
-// === Compute Stream Ranking if streams > 1 ===
-$studentRank = 1;
-$totalInStream = 1;
-$studentAvg = 0;
-$overallComment = "";
-
-if ($totalStreams > 1) {
+    // === CLASS (Stream) RANK ===
     $classAvgSql = "
         SELECT sc.std_id, AVG(sc.Score) as avgScore 
         FROM score sc
         JOIN student_subject ss ON sc.std_id = ss.student_id
-        JOIN class c ON ss.class_id = c.id
-        WHERE sc.term = ? 
-          AND sc.exam_type = ? 
-          AND YEAR(sc.created_at) = ? 
-          AND c.name LIKE CONCAT(?, '%')
+        WHERE ss.class_id = ? AND sc.term = ? AND sc.exam_type = ? 
+          AND YEAR(sc.created_at) = ? AND sc.school_id = ?
         GROUP BY sc.std_id
         ORDER BY avgScore DESC
     ";
+    $classAvgStmt = $conn->prepare($classAvgSql);
+    $classAvgStmt->bind_param("issii", $class_id, $term, $exam_type, $year, $school_id);
+    $classAvgStmt->execute();
+    $classAvgResult = $classAvgStmt->get_result();
+    $classAvgStmt->close();
 
-    $stmt = $conn->prepare($classAvgSql);
-    $stmt->bind_param("ssis", $term, $examType, $year, $streamLevel);
+    $studentClassRank = null;
+    $totalStudentsInClass = 0;
+    $rankPos = 1;
+    $prevAvg = null;
+
+    while ($row = $classAvgResult->fetch_assoc()) {
+        $totalStudentsInClass++;
+        if ($prevAvg !== null && floatval($row['avgScore']) < $prevAvg) {
+            $rankPos = $totalStudentsInClass; 
+        }
+        if ($row['std_id'] == $student_id) {
+            $studentClassRank = $rankPos;
+        }
+        $prevAvg = floatval($row['avgScore']);
+    }
+    if ($studentClassRank === null) $studentClassRank = $totalStudentsInClass;
+
+    // === GRADE (All Streams) RANK ===
+    $gradeRankSql = "
+        SELECT sc.std_id, AVG(sc.Score) as avgScore 
+        FROM score sc
+        JOIN student_subject ss ON sc.std_id = ss.student_id
+        JOIN class c ON ss.class_id = c.id
+        WHERE sc.term = ? AND sc.exam_type = ? 
+          AND YEAR(sc.created_at) = ? AND c.name LIKE CONCAT(?, '%') 
+          AND sc.school_id = ?
+        GROUP BY sc.std_id
+        ORDER BY avgScore DESC
+    ";
+    $stmt = $conn->prepare($gradeRankSql);
+    $stmt->bind_param("ssisi", $term, $exam_type, $year, $stream_number, $school_id);
     $stmt->execute();
-    $classAvgResult = $stmt->get_result();
+    $gradeRankResult = $stmt->get_result();
+    $stmt->close();
 
-    $streamRanks = [];
-    $rank = 1;
-    while ($r = $classAvgResult->fetch_assoc()) {
-        $streamRanks[$r['std_id']] = [
-            'avgScore' => $r['avgScore'],
-            'rank' => $rank++
+    $studentGradeRank = null;
+    $totalInGrade = 0;
+    $rankPos = 1;
+    $prevAvg = null;
+
+    while ($row = $gradeRankResult->fetch_assoc()) {
+        $totalInGrade++;
+        if ($prevAvg !== null && floatval($row['avgScore']) < $prevAvg) {
+            $rankPos = $totalInGrade;
+        }
+        if ($row['std_id'] == $student_id) {
+            $studentGradeRank = $rankPos;
+        }
+        $prevAvg = floatval($row['avgScore']);
+    }
+    if ($studentGradeRank === null) $studentGradeRank = $totalInGrade;
+
+    // --- SUBJECT RANKS (per subject) ---
+    $subjectRanks = [];
+    foreach ($studentScores as $row) {
+        $subjectId = $row['subject_id'];
+        $sql = "
+            SELECT std_id, Score 
+            FROM score 
+            WHERE subject_id = ? 
+              AND class_id = ? 
+              AND term = ? 
+              AND exam_type = ? 
+              AND YEAR(created_at) = ?
+            ORDER BY Score DESC
+        ";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iissi", $subjectId, $student['class_id'], $term, $exam_type, $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        $rank = 0;
+        $totalStudents = $result->num_rows;
+        $studentRank = null;
+
+        while ($r = $result->fetch_assoc()) {
+            $rank++;
+            if ($r['std_id'] == $student_id) {
+                $studentRank = $rank;
+                break;
+            }
+        }
+
+        $subjectRanks[$subjectId] = [
+            'rank' => $studentRank ?? $rank,
+            'total' => $totalStudents
         ];
     }
 
-    if (isset($streamRanks[$studentId])) {
-        $studentAvg = $streamRanks[$studentId]['avgScore'];
-        $studentRank = $streamRanks[$studentId]['rank'];
-        $totalInStream = count($streamRanks);
-    }
-    
-    // Overall Comment
-    if ($studentAvg >= 70) {
-        $overallComment = "Excellent";
-    } elseif ($studentAvg >= 60) {
-        $overallComment = "Good";
-    } elseif ($studentAvg >= 50) {
-        $overallComment = "Average";
-    } else {
-        $overallComment = "Put more effort";
-    }
 
-    // === Append Stream Ranking to HTML ONLY if streams > 1 ===
-    $html .= "<h3>Stream Ranking</h3>";
-    $html .= "<p><strong>Stream Position:</strong> {$studentRank} out of {$totalInStream}</p>";
-    $html .= "<p><strong>Average:</strong> " . number_format($studentAvg, 2) . "%</p>";
-    $html .= "<p><strong>Comment:</strong> {$overallComment}</p>";
-}
 
-// Watermark
-// --- SUBJECT RANKS (per class) ---
-$subjectRanks = [];
+    // === Compute overall average for student ===
+$totalScore = 0;
+$subjectCount = count($studentScores);
 foreach ($studentScores as $row) {
-    $subjectId = $row['subject_id'];
-
-    // get all scores for this subject in the same class
-    $sql = "
-        SELECT std_id, Score 
-        FROM score 
-        WHERE subject_id = ? 
-          AND class_id = ? 
-          AND term = ? 
-          AND exam_type = ? 
-          AND YEAR(created_at) = ?
-        ORDER BY Score DESC
-    ";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iissi", $subjectId, $student['class_id'], $term, $exam_type, $year);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $stmt->close();
-
-    $rank = 0;
-    $totalStudents = $result->num_rows; // total students who sat this subject
-    $studentRank = null;
-
-    // loop through ranks
-    while ($r = $result->fetch_assoc()) {
-        $rank++;
-        if ($r['std_id'] == $student_id) {
-            $studentRank = $rank;
-            break; // found our student, stop here
-        }
-    }
-
-    // save subject rank + total
-    $subjectRanks[$subjectId] = [
-        'rank' => $studentRank ?? $rank,
-        'total' => $totalStudents
-    ];
+    $totalScore += floatval($row['Score']);
 }
+$overallAvg = $subjectCount > 0 ? $totalScore / $subjectCount : 0;
 
-
-$watermark = "<div style='position: fixed; top: 40%; left: 20%; width: 60%; text-align: center; opacity: 0.08; font-size: 80px; color: gray; transform: rotate(-30deg); z-index: -1;'>"
-    . htmlspecialchars($school_name, ENT_QUOTES) . "</div>";
-
-// Start HTML for PDF
-$html = "
-<div style='padding: 15px; font-family: Arial, sans-serif; position: relative; height: 100%; page-break-after: avoid;'>
-    $watermark
-    <h1 style='text-align: center; color: #0d6efd; margin-bottom: 0.2em;'>" . htmlspecialchars($school_name, ENT_QUOTES) . "</h1>
-    <h2 style='text-align: center; color: #198754; margin-top: 0.2em;'>STUDENT REPORT FORM</h2>
-
-    <p><strong>Student:</strong> " . htmlspecialchars($student['firstname'] . ' ' . $student['lastname'], ENT_QUOTES) 
-    . " (Adm: " . htmlspecialchars($student['admno'], ENT_QUOTES) . ")</p>
-    <p><strong>Class:</strong> " . htmlspecialchars($class_name, ENT_QUOTES) . "</p>
-    <p><strong>Term:</strong> " . htmlspecialchars($term, ENT_QUOTES) . ", 
-       <strong>Exam Type:</strong> " . htmlspecialchars($exam_type, ENT_QUOTES) . ", 
-       <strong>Year:</strong> " . htmlspecialchars($year, ENT_QUOTES) . "</p>
-
-    <table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
-        <tr style='background-color: #f2f2f2;'>
-            <th>#</th>
-            <th>Subject</th>
-            <th>Score</th>
-            <th>Performance</th>
-            <th>Teacher Comments</th>
-            <th>Subject Rank</th>
-        </tr>";
-
-
-
-        
-
-$count = 1;
-foreach ($studentScores as $row) {
-    $subjectId = $row['subject_id'];
-    $rankInfo = $subjectRanks[$subjectId] ?? ['rank' => '-', 'total' => '-'];
-
-    $html .= "<tr>
-                <td>" . $count++ . "</td>
-                <td>" . htmlspecialchars($row['subject_name'], ENT_QUOTES) . "</td>
-                <td>" . htmlspecialchars($row['Score'], ENT_QUOTES) . "</td>
-                <td>" . htmlspecialchars($row['performance'], ENT_QUOTES) . "</td>
-                <td>" . htmlspecialchars($row['tcomments'], ENT_QUOTES) . "</td>
-                <td>{$rankInfo['rank']}/{$rankInfo['total']}</td>
-
-              </tr>";
-}
-
-$html .= "</table>
-<div style='margin-top:10px; font-size: 13px;'>
-    <p><strong>Class Position:</strong> " . $studentClassRank . " out of " . $totalStudentsInClass . "</p>";
-
-if ($totalStreams > 1) {
-    $html .= "<p><strong>Stream Position:</strong> " . $studentRank . " out of " . $totalInStream . "</p>";
+// === Generate Teacher Comment based on overall average ===
+if ($overallAvg >= 70) {
+    $teacherComment = "Excellent performance, keep it up!";
+} elseif ($overallAvg >= 60) {
+    $teacherComment = "Good performance, but there is room for improvement.";
+} elseif ($overallAvg >= 50) {
+    $teacherComment = "Average performance, strive to do better.";
 } else {
-    // If only one stream, show nothing (or replace with "1 out of 1" if you prefer)
-    $html .= "<p><strong>Stream Position:</strong> ONLY ONE CLASS AVAILABLE</p>";
+    $teacherComment = "Poor performance, more effort is needed.";
 }
 
-$html .= "</div>
 
 
+    // Watermark
+    $watermark = "<div style='position: fixed; top: 40%; left: 20%; width: 60%; text-align: center; opacity: 0.08; font-size: 80px; color: gray; transform: rotate(-30deg); z-index: -1;'>"
+        . htmlspecialchars($school_name, ENT_QUOTES) . "</div>";
 
+    // HTML for PDF
+    $html = "
+    <div style='padding: 15px; font-family: Arial, sans-serif; position: relative; height: 100%; page-break-after: avoid;'>
+        $watermark
+        <h1 style='text-align: center; color: #090a0cff; margin-bottom: 0.2em;'>" . htmlspecialchars($school_name, ENT_QUOTES) . "</h1>
+        <h2 style='text-align: center; color: #070808ff; margin-top: 0.2em;'>STUDENT REPORT FORM</h2>
+
+        <p><strong>STUDENT:</strong> " . htmlspecialchars($student['firstname'] . ' ' . $student['lastname'], ENT_QUOTES) 
+        . " (Adm: " . htmlspecialchars($student['admno'], ENT_QUOTES) . ")</p>
+        <p><strong>CLASS:</strong> " . htmlspecialchars($class_name, ENT_QUOTES) . "</p>
+        <p><strong>TERM:</strong> " . htmlspecialchars($term, ENT_QUOTES) . ", 
+           <strong>EXAM Type:</strong> " . htmlspecialchars($exam_type, ENT_QUOTES) . ", 
+           <strong>YEAR:</strong> " . htmlspecialchars($year, ENT_QUOTES) . "</p>
+
+        <table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
+            <tr style='background-color: #f2f2f2;'>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Score</th>
+                <th>Performance</th>
+                <th>Teacher Comments</th>
+                <th>Subject Rank</th>
+            </tr>";
+
+    $count = 1;
+    foreach ($studentScores as $row) {
+        $subjectId = $row['subject_id'];
+        $rankInfo = $subjectRanks[$subjectId] ?? ['rank' => '-', 'total' => '-'];
+        $html .= "<tr>
+                    <td>" . $count++ . "</td>
+                    <td>" . htmlspecialchars($row['subject_name'], ENT_QUOTES) . "</td>
+                    <td>" . htmlspecialchars($row['Score'], ENT_QUOTES) . "</td>
+                    <td>" . htmlspecialchars($row['performance'], ENT_QUOTES) . "</td>
+                    <td>" . htmlspecialchars($row['tcomments'], ENT_QUOTES) . "</td>
+                    <td>{$rankInfo['rank']}/{$rankInfo['total']}</td>
+                  </tr>";
+    }
+
+    // Append ranking info
+    $html .= "</table>
+    <div style='margin-top:10px; font-size: 13px;'>
+        <p><strong>Class Position:</strong> {$studentClassRank}/{$totalStudentsInClass}</p>
+        <p><strong>Overral Position:</strong> {$studentGradeRank}/{$totalInGrade}</p>
+    </div>";
+
+    // Teacher Comment placeholder
+    
+  $html .= "
 <h3>Teacher's Comment:</h3>
-<p style='font-size: 13px; margin-bottom: 15px;'>{$overallComment}</p>
-
-<h3>Grading System & Performance Comments</h3>
-<table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
-    <thead style='background-color: #f2f2f2;'>
-        <tr>
-            <th>Performance</th>
-            <th>Meaning</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr><td>M.E</td><td>Meeting Expectation</td></tr>
-        <tr><td>A.E</td><td>Approaching Expectation</td></tr>
-        <tr><td>B.E</td><td>Below Expectation</td></tr>
-        <tr><td>E.E</td><td>Exceeding Expectation</td></tr>
-    </tbody>
-</table>
-
-<!-- Signatures fixed near bottom -->
-<div style='position: absolute; bottom: 72px; width: 100%; font-size: 15px;'>
-    <p>Head of Institution's Name ........................................ ...........Signature ........................................................</p>
-    <p>Teacher's Name ................................................................ Signature .......................................................</p>
-</div>
-</div>";
+<p style='font-size: 13px; margin-bottom: 15px;'>$teacherComment</p>
 
 
+    <h3>Grading System & Performance Comments</h3>
+    <table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
+        <thead style='background-color: #f2f2f2;'>
+            <tr>
+                <th>Performance</th>
+                <th>Meaning</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>M.E</td><td>Meeting Expectation</td></tr>
+            <tr><td>A.E</td><td>Approaching Expectation</td></tr>
+            <tr><td>B.E</td><td>Below Expectation</td></tr>
+            <tr><td>E.E</td><td>Exceeding Expectation</td></tr>
+        </tbody>
+    </table>
+
+    <div style='position: fixed; bottom: 60px; width: 100%; font-size: 15px; background: ; padding: 15px;'>
+    <p>HOI's name ........................................ ...........................Signature .......................................................</p>
+    <p>Teacher's name .............................................................Signature ........................................................</p>
+    </div>
+    </div>";
 
     // PDF generation
     $options = new Options();
