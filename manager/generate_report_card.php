@@ -8,6 +8,123 @@ require_once '../vendor/autoload.php';
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
+function getStudentProgress($student_id, $school_id, $conn) {
+    $sql = "
+        SELECT YEAR(created_at) as yr, term, exam_type, AVG(Score) as avgScore
+        FROM score
+        WHERE std_id = ? AND school_id = ?
+        GROUP BY YEAR(created_at), term, exam_type
+        ORDER BY yr ASC, term ASC, exam_type ASC
+    ";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $student_id, $school_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $progress = [];
+    while ($row = $result->fetch_assoc()) {
+        $year = $row['yr'];
+        $term = 'Term' . $row['term']; // Term1, Term2, Term3
+        $examType = $row['exam_type']; // e.g., CAT, Mid-Term, End-Term
+        $progress[$year][$term][$examType] = round($row['avgScore'], 0);
+    }
+
+    $stmt->close();
+    return $progress;
+}
+
+function generateProgressChart($progress) {
+    if (empty($progress)) return null;
+
+    $examColors = [
+        'CAT' => 'red',
+        'Mid-Term' => 'green',
+        'End-Term' => 'blue',
+        'Term1' => 'orange',
+        'Term2' => 'purple',
+        'Term3' => 'brown'
+    ];
+
+    $datasets = [];
+    foreach ($examColors as $exam => $color) {
+        $datasets[$exam] = [
+            'label' => $exam,
+            'data' => [],
+            'borderColor' => $color,
+            'fill' => false,
+            'tension' => 0.1,
+            'pointRadius' => 5
+        ];
+    }
+
+    // Offsets to separate points inside a year
+    $offsets = [
+        'CAT' => -0.25,
+        'Mid-Term' => -0.15,
+        'End-Term' => -0.05,
+        'Term1' => 0.05,
+        'Term2' => 0.15,
+        'Term3' => 0.25
+    ];
+
+    // Only add points that exist
+    foreach ($progress as $year => $terms) {
+        foreach ($terms as $term => $exams) {
+            foreach ($examColors as $exam => $color) {
+                if (isset($exams[$exam])) {
+                    $datasets[$exam]['data'][] = [
+                        'x' => $year + $offsets[$exam],
+                        'y' => $exams[$exam]
+                    ];
+                }
+            }
+        }
+    }
+
+    $years = array_keys($progress);
+    $minYear = min($years) - 1; // previous year
+    $maxYear = max($years) + 1;
+
+    $chartConfig = [
+        "type" => "scatter",
+        "data" => ["datasets" => array_values($datasets)],
+        "options" => [
+            "plugins" => [
+                "title" => [
+                    "display" => true,
+                    "text" => "Student Progress per Year (Only Exams Done)"
+                ],
+                "legend" => ["display" => true]
+            ],
+            "scales" => [
+                "x" => [
+                    "type" => "linear",
+                    "min" => $minYear,
+                    "max" => $maxYear,
+                    "title" => ["display" => true, "text" => "Year"],
+                    "ticks" => [
+                        "stepSize" => 1,
+                        "callback" => "function(value){ return Math.round(value); }"
+                    ]
+                ],
+                "y" => [
+                    "min" => 0,
+                    "max" => 100,
+                    "title" => ["display" => true, "text" => "Score"]
+                ]
+            ]
+        ]
+    ];
+
+    $encoded = urlencode(json_encode($chartConfig));
+    $url = "https://quickchart.io/chart.png?c={$encoded}";
+
+    $png = @file_get_contents($url);
+    if (!$png) return null;
+
+    return "data:image/png;base64," . base64_encode($png);
+}
+
 function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
     // Fetch student info and class via student_subject
     $stu_q = $conn->prepare("
@@ -183,106 +300,131 @@ function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
         ];
     }
 
-
-
     // === Compute overall average for student ===
-$totalScore = 0;
-$subjectCount = count($studentScores);
-foreach ($studentScores as $row) {
-    $totalScore += floatval($row['Score']);
-}
-$overallAvg = $subjectCount > 0 ? $totalScore / $subjectCount : 0;
-
-// === Generate Teacher Comment based on overall average ===
-if ($overallAvg >= 70) {
-    $teacherComment = "Excellent performance, keep it up!";
-} elseif ($overallAvg >= 60) {
-    $teacherComment = "Good performance, but there is room for improvement.";
-} elseif ($overallAvg >= 50) {
-    $teacherComment = "Average performance, strive to do better.";
-} else {
-    $teacherComment = "Poor performance, more effort is needed.";
-}
-
-
-
-    // Watermark
-    $watermark = "<div style='position: fixed; top: 40%; left: 20%; width: 60%; text-align: center; opacity: 0.08; font-size: 80px; color: gray; transform: rotate(-30deg); z-index: -1;'>"
-        . htmlspecialchars($school_name, ENT_QUOTES) . "</div>";
-
-    // HTML for PDF
-    $html = "
-    <div style='padding: 15px; font-family: Arial, sans-serif; position: relative; height: 100%; page-break-after: avoid;'>
-        $watermark
-        <h1 style='text-align: center; color: #090a0cff; margin-bottom: 0.2em;'>" . htmlspecialchars($school_name, ENT_QUOTES) . "</h1>
-        <h2 style='text-align: center; color: #070808ff; margin-top: 0.2em;'>STUDENT REPORT FORM</h2>
-
-        <p><strong>STUDENT:</strong> " . htmlspecialchars($student['firstname'] . ' ' . $student['lastname'], ENT_QUOTES) 
-        . " (Adm: " . htmlspecialchars($student['admno'], ENT_QUOTES) . ")</p>
-        <p><strong>CLASS:</strong> " . htmlspecialchars($class_name, ENT_QUOTES) . "</p>
-        <p><strong>TERM:</strong> " . htmlspecialchars($term, ENT_QUOTES) . ", 
-           <strong>EXAM Type:</strong> " . htmlspecialchars($exam_type, ENT_QUOTES) . ", 
-           <strong>YEAR:</strong> " . htmlspecialchars($year, ENT_QUOTES) . "</p>
-
-        <table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
-            <tr style='background-color: #f2f2f2;'>
-                <th>#</th>
-                <th>Subject</th>
-                <th>Score</th>
-                <th>Performance</th>
-                <th>Teacher Comments</th>
-                <th>Subject Rank</th>
-            </tr>";
-
-    $count = 1;
+    $totalScore = 0;
+    $subjectCount = count($studentScores);
     foreach ($studentScores as $row) {
-        $subjectId = $row['subject_id'];
-        $rankInfo = $subjectRanks[$subjectId] ?? ['rank' => '-', 'total' => '-'];
-        $html .= "<tr>
-                    <td>" . $count++ . "</td>
-                    <td>" . htmlspecialchars($row['subject_name'], ENT_QUOTES) . "</td>
-                    <td>" . htmlspecialchars($row['Score'], ENT_QUOTES) . "</td>
-                    <td>" . htmlspecialchars($row['performance'], ENT_QUOTES) . "</td>
-                    <td>" . htmlspecialchars($row['tcomments'], ENT_QUOTES) . "</td>
-                    <td>{$rankInfo['rank']}/{$rankInfo['total']}</td>
-                  </tr>";
+        $totalScore += floatval($row['Score']);
+    }
+    $overallAvg = $subjectCount > 0 ? $totalScore / $subjectCount : 0;
+
+    // === Generate Teacher Comment based on overall average ===
+    if ($overallAvg >= 70) {
+        $teacherComment = "Excellent performance, keep it up!";
+    } elseif ($overallAvg >= 60) {
+        $teacherComment = "Good performance, but there is room for improvement.";
+    } elseif ($overallAvg >= 50) {
+        $teacherComment = "Average performance, strive to do better.";
+    } else {
+        $teacherComment = "Poor performance, more effort is needed.";
     }
 
-    // Append ranking info
-    $html .= "</table>
-    <div style='margin-top:10px; font-size: 13px;'>
+$watermark = "<div style='position: fixed; top: 40%; left: 20%; width: 60%; 
+    text-align: center; opacity: 0.08; font-size: 70px; color: gray; 
+    transform: rotate(-30deg); z-index: -1;'>"
+    . htmlspecialchars($school_name, ENT_QUOTES) . "</div>";
+
+$html = "
+<div style='width: 100%; height: 100%; padding: 15px; font-family: Arial, sans-serif; 
+            font-size: 13px; transform: scale(0.9); transform-origin: top left; box-sizing: border-box;'>
+
+    $watermark
+
+    <h1 style='text-align: center; color: #090a0cff; margin-bottom: 0.2em; font-size:24px;'>
+        " . htmlspecialchars($school_name, ENT_QUOTES) . "
+    </h1>
+    <h2 style='text-align: center; color: #070808ff; margin-top: 0.2em; font-size: 18px;'>
+        STUDENT REPORT FORM
+    </h2>
+
+    <p><strong>STUDENT:</strong> " . htmlspecialchars($student['firstname'] . ' ' . $student['lastname'], ENT_QUOTES) . 
+    " (Adm: " . htmlspecialchars($student['admno'], ENT_QUOTES) . ")</p>
+    <p><strong>CLASS:</strong> " . htmlspecialchars($class_name, ENT_QUOTES) . "</p>
+    <p><strong>TERM:</strong> " . htmlspecialchars($term, ENT_QUOTES) . ", 
+       <strong>EXAM Type:</strong> " . htmlspecialchars($exam_type, ENT_QUOTES) . ", 
+       <strong>YEAR:</strong> " . htmlspecialchars($year, ENT_QUOTES) . "</p>
+
+    <table border='1' cellpadding='3' cellspacing='0' 
+           style='width: 100%; border-collapse: collapse; font-size: 12px;'>
+        <tr style='background-color: #f2f2f2;'>
+            <th>#</th>
+            <th>Subject</th>
+            <th>Score</th>
+            <th>Performance</th>
+            <th>Teacher Comments</th>
+            <th>Subject Rank</th>
+        </tr>";
+
+// Subject scores
+$count = 1;
+foreach ($studentScores as $row) {
+    $subjectId = $row['subject_id'];
+    $rankInfo = $subjectRanks[$subjectId] ?? ['rank' => '-', 'total' => '-'];
+    $html .= "<tr>
+                <td>" . $count++ . "</td>
+                <td>" . htmlspecialchars($row['subject_name'], ENT_QUOTES) . "</td>
+                <td>" . htmlspecialchars($row['Score'], ENT_QUOTES) . "</td>
+                <td>" . htmlspecialchars($row['performance'], ENT_QUOTES) . "</td>
+                <td>" . htmlspecialchars($row['tcomments'], ENT_QUOTES) . "</td>
+                <td>{$rankInfo['rank']}/{$rankInfo['total']}</td>
+              </tr>";
+}
+
+$html .= "</table>";
+
+// Horizontal row: Left = Class + Teacher Comment, Right = Grading System
+// Horizontal row: Left = Class + Teacher Comment, Right = Grading System
+$html .= "
+<div style='width: 100%; display: flex; justify-content: space-between; margin-top:10px; align-items: flex-start;'>
+
+    <!-- Left side -->
+    <div style='width: 65%;'>
         <p><strong>Class Position:</strong> {$studentClassRank}/{$totalStudentsInClass}</p>
-        <p><strong>Overral Position:</strong> {$studentGradeRank}/{$totalInGrade}</p>
-    </div>";
+        <p><strong>Overall Position:</strong> {$studentGradeRank}/{$totalInGrade}</p>
+        <h3 style='margin-top: 5px;'>Teacher's Comment:</h3>
+        <p style='font-size: 15px; margin-bottom: 0;'>$teacherComment</p>
+    </div> <br>
 
-    // Teacher Comment placeholder
-    
-  $html .= "
-<h3>Teacher's Comment:</h3>
-<p style='font-size: 13px; margin-bottom: 15px;'>$teacherComment</p>
-
-
-    <h3>Grading System & Performance Comments</h3>
-    <table border='1' cellpadding='4' cellspacing='0' style='width: 100%; border-collapse: collapse; font-size: 12px;'>
-        <thead style='background-color: #f2f2f2;'>
-            <tr>
-                <th>Performance</th>
-                <th>Meaning</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td>M.E</td><td>Meeting Expectation</td></tr>
-            <tr><td>A.E</td><td>Approaching Expectation</td></tr>
-            <tr><td>B.E</td><td>Below Expectation</td></tr>
-            <tr><td>E.E</td><td>Exceeding Expectation</td></tr>
-        </tbody>
-    </table>
-
-    <div style='position: absolute; bottom: 72px; width: 100%; font-size: 15px;'>
-        <p>HOI's name ........................................ ..............................Signature ........................................................</p>
-        <p>Teacher's name ................................................................ Signature .......................................................</p>
+    <!-- Right side -->
+    <div style='width: 100%; display: flex; justify-content: center;'>
+        <table border='1' cellpadding='2' cellspacing='0' style='border-collapse: collapse; font-size:11px;'>
+            <thead style='background-color: #f2f2f2;'>
+                <tr>
+                    <th>Performance</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>M.E</td><td>Meeting Expectation</td></tr>
+                <tr><td>A.E</td><td>Approaching Expectation</td></tr>
+                <tr><td>B.E</td><td>Below Expectation</td></tr>
+                <tr><td>E.E</td><td>Exceeding Expectation</td></tr>
+            </tbody>
+        </table>
     </div>
+
+</div>";
+
+
+// Progress chart
+$progress = getStudentProgress($student_id, $school_id, $conn);
+$chartUrl = generateProgressChart($progress);
+
+if ($chartUrl) {
+    $html .= "
+    <div style='text-align:center; margin:10px 0;'>
+        <img src='{$chartUrl}' style='width:100%; max-width:450px; height:auto;' />
     </div>";
+}
+
+// Signatures at bottom
+$html .= "
+<div style='margin-top: 20px; font-size: 13px; clear: both;'>
+    <p>HOI's name ........................................ .................Signature .............................................................................</p>
+    <p>Teacher's name ....................................................... Signature ............................................................................</p>
+</div>
+</div>"; // end main container
+
 
     // PDF generation
     $options = new Options();
