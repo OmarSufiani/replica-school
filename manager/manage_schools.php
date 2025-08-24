@@ -1,9 +1,7 @@
 <?php
-
 session_start(); // start the session
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
 
 // Redirect to login if not logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
@@ -21,7 +19,6 @@ if ($_SESSION['role'] !== 'Superadmin') {
 }
 
 include 'db.php';
-
 
 $success = '';
 $error = '';
@@ -42,8 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['school_id'], $_POST['
     $stmt->close();
 }
 
-// Get all schools
-$result = $conn->query("SELECT id, school_name, school_code, address, phone, email, created_at, status FROM school ORDER BY id ASC");
+// Get all schools with teacher/admin/dean counts
+$query = "
+    SELECT s.id, s.school_name, s.school_code, s.address, s.phone, s.email, s.created_at, s.status,
+           SUM(CASE WHEN u.role = 'Teacher' THEN 1 ELSE 0 END) AS teacher_count,
+           SUM(CASE WHEN u.role = 'Admin' THEN 1 ELSE 0 END) AS admin_count,
+           SUM(CASE WHEN u.role = 'Dean' THEN 1 ELSE 0 END) AS dean_count
+    FROM school s
+    LEFT JOIN users u ON u.school_id = s.id
+    GROUP BY s.id
+    ORDER BY s.id ASC
+";
+$result = $conn->query($query);
 $schools = $result->fetch_all(MYSQLI_ASSOC);
 $conn->close();
 ?>
@@ -80,6 +87,9 @@ $conn->close();
                     <th>Phone</th>
                     <th>Email</th>
                     <th>Created At</th>
+                    <th>Teachers</th>
+                    <th>Admins</th>
+                    <th>Deans</th>
                     <th>Status</th>
                     <th>Update</th>
                 </tr>
@@ -94,6 +104,9 @@ $conn->close();
                     <td><?= htmlspecialchars($school['phone']) ?></td>
                     <td><?= htmlspecialchars($school['email']) ?></td>
                     <td><?= $school['created_at'] ?></td>
+                    <td><?= $school['teacher_count'] ?></td>
+                    <td><?= $school['admin_count'] ?></td>
+                    <td><?= $school['dean_count'] ?></td>
                     <td>
                         <form method="POST" class="d-flex justify-content-center align-items-center gap-2">
                             <input type="hidden" name="school_id" value="<?= $school['id'] ?>">

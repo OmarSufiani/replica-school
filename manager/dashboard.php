@@ -60,7 +60,7 @@ if (!isset($_SESSION['user_id'])) {
             <?php if ($_SESSION['role'] === 'Superadmin'): ?>
                     <a class="btn btn-primary" href="add_school.php">➕ Add School</a>
                     <a class="btn btn-primary" href="manage_users.php">➕ Manage Admins</a>
-                    <a class="btn btn-primary" href="view_schools.php">➕ Manage Schools</a>
+                
                      <a class="btn btn-primary" href="manage_schools.php">➕ Desable School</a>
                     <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 <?php endif; ?>
@@ -72,6 +72,7 @@ if (!isset($_SESSION['user_id'])) {
                      <a class="btn btn-primary" href="csv.php">📊 View  School Report</a>
                     <a class="btn btn-primary" href="active_students.php">➕ Students Subject Auto Assign to Next Year</a>
                      <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
+                   
                     <a class="btn btn-primary" href="edit_student.php">➕ Edit Student</a>
                      <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
                 <?php endif; ?>
@@ -84,6 +85,7 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary" href="view_students.php">➕ View Students</a>
                     <a class="btn btn-primary" href="add_teacher.php">➕ Add Teacher</a>
                     <a class="btn btn-primary" href="tsubject_class.php">➕ Teacher Subject/Class</a>
+                    <a class="btn btn-primary" href="add_classteacher.php">➕ Add Class Teacher</a>
                     <a class="btn btn-primary" href="delete_student.php">➕ View Students </a>
                      <a class="btn btn-primary" href="delete_scores.php">➕ Manage Scores </a>
                     <a class="btn btn-primary" href="file.php">➕ All files</a>

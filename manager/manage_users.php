@@ -5,10 +5,18 @@ include 'db.php';
 
 
 // Only allow logged-in admin
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['school_id'])) {
+// Only allow logged-in users
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     header('Location: ../login.php');
     exit();
 }
+
+// If not Superadmin, enforce school_id
+if ($_SESSION['role'] !== 'Superadmin' && !isset($_SESSION['school_id'])) {
+    header('Location: ../login.php');
+    exit();
+}
+
 // Handle Add/Edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
@@ -162,10 +170,9 @@ if (isset($_GET['edit_id'])) {
 <?php
 
 
-// Check role and adjust query
 if ($_SESSION['role'] === 'Superadmin') {
-    // Superadmin sees only Admin users from all schools
-    $query = "SELECT * FROM users WHERE role = 'admin' ORDER BY created_at ASC";
+    // Superadmin sees Admins and Deans from ALL schools
+    $query = "SELECT * FROM users WHERE role IN ('admin', 'dean') ORDER BY created_at ASC";
 } else if ($_SESSION['role'] === 'admin') {
     // Admin sees all users from their school EXCEPT Superadmin
     $school_id = $_SESSION['school_id'];
@@ -173,6 +180,7 @@ if ($_SESSION['role'] === 'Superadmin') {
 } else {
     die("Unauthorized Access");
 }
+
 
 $result = mysqli_query($conn, $query);
 ?>

@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 4.9.0.1
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: sql200.infinityfree.com
--- Generation Time: Aug 21, 2025 at 08:39 AM
--- Server version: 11.4.7-MariaDB
--- PHP Version: 7.2.22
+-- Host: 127.0.0.1
+-- Generation Time: Aug 24, 2025 at 01:13 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -19,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `if0_38341635_omar`
+-- Database: `ramzy`
 --
 
 -- --------------------------------------------------------
@@ -67,6 +66,19 @@ INSERT INTO `class` (`id`, `name`, `school_id`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `class_teachers`
+--
+
+CREATE TABLE `class_teachers` (
+  `id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `class_id` int(11) NOT NULL,
+  `school_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `exam`
 --
 
@@ -88,8 +100,8 @@ CREATE TABLE `exam` (
 --
 
 INSERT INTO `exam` (`id`, `exam_name`, `term`, `exam_type`, `year`, `subject`, `file_path`, `created_at`, `school_id`, `teacher_id`) VALUES
-(14, 'FORM 4 MATHEMATICS', 'TERM1', 'CAT', 2025, 'MATHS', '../uploads/exams/1755693718_report_27_Term 1_CAT_2025 (11).pdf', '2025-08-20 12:41:58', 3, 25),
-(15, 'FORM 4 english', 'TERM1', 'CAT', 2025, 'english', '../uploads/exams/1755694664_1755693718_report_27_Term 1_CAT_2025 (11).pdf', '2025-08-20 12:57:44', 3, 25);
+(14, 'FORM 4 MATHEMATICS', 'TERM1', 'CAT', '2025', 'MATHS', '../uploads/exams/1755693718_report_27_Term 1_CAT_2025 (11).pdf', '2025-08-20 12:41:58', 3, 25),
+(15, 'FORM 4 english', 'TERM1', 'CAT', '2025', 'english', '../uploads/exams/1755694664_1755693718_report_27_Term 1_CAT_2025 (11).pdf', '2025-08-20 12:57:44', 3, 25);
 
 -- --------------------------------------------------------
 
@@ -186,7 +198,7 @@ INSERT INTO `student` (`id`, `firstname`, `lastname`, `gender`, `dob`, `guardian
 (27, 'Iddris', 'Matao', 'Male', '2025-08-20', 'Kk', 'Hhhh', 'Hhh', 'graduated', '', 6756, 2, 52),
 (28, 'Adam', 'Dzila', 'Male', '2025-08-20', 'Null', 'Maka', 'Shimoni', 'active', 'uploads/students/1755546698_1000244199.jpg', 9066, 4, 56),
 (29, 'HAMAD', 'JUMA', 'Male', '2025-08-06', 'kkkk', '0769565800', 'kwale', 'graduated', 'uploads/students/1755696295_1755067844_IHSAN0.png', 7890, 2, 52),
-(30, 'imran', 'abdallah', 'Male', '2025-08-06', 'kuku', '0769565800', 'kombani', 'active', '', 8907, 2, 53);
+(30, 'imran', 'abdallah', 'Male', '2025-08-06', 'kuku', '0769565800', 'kombani', 'transferred', '', 8907, 2, 53);
 
 -- --------------------------------------------------------
 
@@ -473,6 +485,14 @@ ALTER TABLE `class`
   ADD KEY `frk_sch8` (`school_id`);
 
 --
+-- Indexes for table `class_teachers`
+--
+ALTER TABLE `class_teachers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `frk_classteacher` (`class_id`),
+  ADD KEY `frk_scghl` (`school_id`);
+
+--
 -- Indexes for table `exam`
 --
 ALTER TABLE `exam`
@@ -567,6 +587,12 @@ ALTER TABLE `class`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
+-- AUTO_INCREMENT for table `class_teachers`
+--
+ALTER TABLE `class_teachers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `exam`
 --
 ALTER TABLE `exam`
@@ -635,6 +661,13 @@ ALTER TABLE `year_log`
 --
 ALTER TABLE `class`
   ADD CONSTRAINT `frk_sch8` FOREIGN KEY (`school_id`) REFERENCES `school` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `class_teachers`
+--
+ALTER TABLE `class_teachers`
+  ADD CONSTRAINT `frk_classteacher` FOREIGN KEY (`class_id`) REFERENCES `class` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `frk_scghl` FOREIGN KEY (`school_id`) REFERENCES `school` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `score`
