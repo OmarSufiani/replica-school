@@ -36,29 +36,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $types .= "s";
     }
 
-    // Only Superadmin can update role + school
-    if ($_SESSION['role'] === 'Superadmin') {
-        if (isset($_POST['role'])) {
-            $sql .= ", role=?";
-            $params[] = $_POST['role'];
-            $types .= "s";
-        }
+    // Role: Only admin or superadmin can change
+    if (in_array($_SESSION['role'], ['admin','Superadmin']) && isset($_POST['role'])) {
+        $sql .= ", role=?";
+        $params[] = $_POST['role'];
+        $types .= "s";
+    }
 
-        if (isset($_POST['school_id']) && $_POST['school_id'] !== "") {
-            $sql .= ", school_id=?";
-            $params[] = $_POST['school_id'];
-            $types .= "i";
-        }
+    // School: Only superadmin can change
+    if ($_SESSION['role'] === 'Superadmin' && isset($_POST['school_id']) && $_POST['school_id'] !== "") {
+        $sql .= ", school_id=?";
+        $params[] = $_POST['school_id'];
+        $types .= "i";
     }
-    // Admin can update role (but not school)
-    elseif ($_SESSION['role'] === 'admin') {
-        if (isset($_POST['role'])) {
-            $sql .= ", role=?";
-            $params[] = $_POST['role'];
-            $types .= "s";
-        }
-    }
-    // Everyone else → role & school are ignored
 
     // Finish query
     $sql .= " WHERE id=?";
@@ -83,8 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html>
 <head>
-     <title>Edit User</title>
-    <!-- Bootstrap 5 CDN -->
+    <title>Edit User</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"> 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -97,28 +86,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h4>Edit Profile</h4>
         </div>
         <div class="card-body">
-          <?php if (!empty($message)): ?>
-    <div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert">
-        <?= $message ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <script>
-        // Auto-dismiss alert after 3 seconds
-        setTimeout(function() {
-            let alert = document.getElementById('successAlert');
-            if (alert) {
-                alert.classList.remove('show');
-                alert.classList.add('fade');
-            }
-        }, 3000);
+            <?php if (!empty($message)): ?>
+                <div id="successAlert" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?= $message ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <script>
+                    setTimeout(function() {
+                        let alert = document.getElementById('successAlert');
+                        if (alert) {
+                            alert.classList.remove('show');
+                            alert.classList.add('fade');
+                        }
+                    }, 3000);
 
-        // Refresh page after 3 seconds
-        setTimeout(function() {
-            window.location.reload();
-        }, 3000);
-    </script>
-<?php endif; ?>
-
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 3000);
+                </script>
+            <?php endif; ?>
 
             <form method="POST">
                 <div class="mb-3">
@@ -137,74 +123,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label">New Password (leave blank to keep current)</label>
                     <input type="password" name="password" class="form-control">
                 </div>
-             
-            
 
-
-
-
-
-                
-                   <?php if ($_SESSION['role'] === 'Superadmin'): ?>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
+                <!-- ROLE -->
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <?php if (in_array($_SESSION['role'], ['Superadmin'])): ?>
                         <select name="role" class="form-select" required>
-                            <option value="user" <?= $user['role'] === 'user' ? 'selected' : '' ?>>User</option>
-                            <option value="student" <?= $user['role'] === 'student' ? 'selected' : '' ?>>Student</option>
-                            <option value="teacher" <?= $user['role'] === 'teacher' ? 'selected' : '' ?>>Teacher</option>
-                            <option value="dean" <?= $user['role'] === 'dean' ? 'selected' : '' ?>>Dean</option>
-                            <option value="hoi" <?= $user['role'] === 'hoi' ? 'selected' : '' ?>>HOI</option>
-                            <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
-                            <option value="superadmin" <?= $user['role'] === 'superadmin' ? 'selected' : '' ?>>SuperAdmin</option>
+                            <?php
+                            $roles = ['user','student','teacher','dean','hoi','admin','superadmin'];
+                            foreach ($roles as $r):
+                            ?>
+                                <option value="<?= $r ?>" <?= $user['role'] === $r ? 'selected' : '' ?>><?= ucfirst($r) ?></option>
+                            <?php endforeach; ?>
                         </select>
-                    </div>
-                <?php endif; ?>
-                <!-- ROLE: only editable by Superadmin or Admin -->
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <select name="role" class="form-select" required>
-                            <option value="user" <?= $user['role'] === 'user' ? 'selected' : '' ?>>User</option>
-                            <option value="student" <?= $user['role'] === 'student' ? 'selected' : '' ?>>Student</option>
-                            <option value="teacher" <?= $user['role'] === 'teacher' ? 'selected' : '' ?>>Teacher</option>
-                            <option value="dean" <?= $user['role'] === 'dean' ? 'selected' : '' ?>>Dean</option>
-                            <option value="hoi" <?= $user['role'] === 'hoi' ? 'selected' : '' ?>>HOI</option>
-                            <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
-                         </option>
-                        </select>
-                    </div>
-                <?php else: ?>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
+                    <?php else: ?>
                         <input type="text" class="form-control" value="<?= htmlspecialchars($user['role']) ?>" readonly>
                         <input type="hidden" name="role" value="<?= htmlspecialchars($user['role']) ?>">
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
 
-                <!-- SCHOOL: only editable by Superadmin -->
-                <?php if ($_SESSION['role'] === 'Superadmin'): ?>
-                    <div class="mb-3">
-                        <label class="form-label">School</label>
+                <!-- SCHOOL -->
+                <div class="mb-3">
+                    <label class="form-label">School</label>
+                    <?php if ($_SESSION['role'] === 'Superadmin'): ?>
                         <select name="school_id" class="form-select" required>
                             <option value="">Select School</option>
-                            <?php
-                            mysqli_data_seek($schools, 0); // reset pointer if needed
+                            <?php mysqli_data_seek($schools, 0);
                             while ($school = mysqli_fetch_assoc($schools)): ?>
                                 <option value="<?= $school['id'] ?>" <?= $user['school_id'] == $school['id'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($school['school_name']) ?>
                                 </option>
                             <?php endwhile; ?>
                         </select>
-                    </div>
-                <?php else: ?>
-                    <div class="mb-3">
-                        <label class="form-label">School</label>
+                    <?php else: ?>
                         <input type="text" class="form-control" value="<?= htmlspecialchars($user['school_id']) ?>" readonly>
                         <input type="hidden" name="school_id" value="<?= htmlspecialchars($user['school_id']) ?>">
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
 
-                <!-- submit button -->
+                <!-- Submit -->
                 <button type="submit" class="btn btn-primary">Update Details</button>
             </form>
         </div>

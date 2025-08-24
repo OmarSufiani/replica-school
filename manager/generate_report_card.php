@@ -330,10 +330,10 @@ $html = "
 
     $watermark
 
-    <h1 style='text-align: center; color: #090a0cff; margin-bottom: 0.2em; font-size:24px;'>
+    <h1 style='text-align: center; color: #090a0cff; margin-bottom: 0.2em; font-size:16px;'>
         " . htmlspecialchars($school_name, ENT_QUOTES) . "
     </h1>
-    <h2 style='text-align: center; color: #070808ff; margin-top: 0.2em; font-size: 18px;'>
+    <h2 style='text-align: center; color: #070808ff; margin-top: 0.2em; font-size: 13px;'>
         STUDENT REPORT FORM
     </h2>
 

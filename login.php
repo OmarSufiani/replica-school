@@ -18,7 +18,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $result->fetch_assoc();
 
     if ($user && password_verify($password, $user['password'])) {
-        // ✅ Check school status
+
+        // ✅ If Superadmin → skip school check
+        if ($user['role'] === 'Superadmin') {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['FirstName'] = $user['FirstName'];
+            $_SESSION['LastName'] = $user['LastName'];
+            $_SESSION['email'] = $user['Email'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['school_id'] = null; // Superadmin not tied to school
+
+            header('Location: manager/dashboard.php');
+            exit;
+        }
+
+        // ✅ For other roles → Check school status
         $school_id = $user['school_id'];
         $school_stmt = $conn->prepare("SELECT status FROM school WHERE id = ?");
         $school_stmt->bind_param("i", $school_id);
@@ -50,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->close();
 }
 ?>
+
 
 
 <!DOCTYPE html>
