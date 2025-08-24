@@ -85,7 +85,7 @@ if (!isset($_SESSION['user_id'])) {
                     <a class="btn btn-primary" href="view_students.php">➕ View Students</a>
                     <a class="btn btn-primary" href="add_teacher.php">➕ Add Teacher</a>
                     <a class="btn btn-primary" href="tsubject_class.php">➕ Teacher Subject/Class</a>
-                    <a class="btn btn-primary" href="add_classteacher.php">➕ Add Class Teacher</a>
+                    <a class="btn btn-primary" href="add_classteacher.php">➕ Assign Class Teacher</a>
                     <a class="btn btn-primary" href="delete_student.php">➕ View Students </a>
                      <a class="btn btn-primary" href="delete_scores.php">➕ Manage Scores </a>
                     <a class="btn btn-primary" href="file.php">➕ All files</a>
