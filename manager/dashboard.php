@@ -128,6 +128,7 @@ $file = __DIR__ . "/" . ltrim($page, "/");
             <li><a href="dashboard.php?page=tsubject_class" class="nav-link">📖 Teacher Subject/Class</a></li>
             <li><a href="dashboard.php?page=csv" class="nav-link">📑 View Report</a></li>
             <li><a href="dashboard.php?page=view_exams" class="nav-link">📝 Exams</a></li>
+             <li><a href="dashboard.php?page=add_classteacher" class="nav-link">📝 Assign Class Teacher</a></li>
             <li><a href="dashboard.php?page=report_form" class="nav-link">📄 Report Form</a></li>
             <li><a href="dashboard.php?page=manage_teachers" class="nav-link">👨‍🏫 Manage Teachers</a></li>
             <li><a href="dashboard.php?page=manage_users" class="nav-link">👤 Manage Users</a></li>
@@ -176,6 +177,7 @@ $file = __DIR__ . "/" . ltrim($page, "/");
          'add_teacher',
          'tsubject_class',
          'manage_teachers',
+         'add_classteacher',
 
        
         // add all other pages here

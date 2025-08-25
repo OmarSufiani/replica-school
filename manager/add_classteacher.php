@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 // Only allow logged-in admin
@@ -76,9 +76,7 @@ $assigned = $conn->query("SELECT ct.id, ct.name AS teacher_name, c.name AS class
 
 
 <div class="container mt-5">
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">
-    &larr; Back to Dashboard
-</a>
+
 
     <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">
