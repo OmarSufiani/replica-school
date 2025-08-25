@@ -139,20 +139,27 @@ if (isset($_GET['edit_id'])) {
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col">
-                        <label>Role</label>
-                        <select name="role" class="form-control" required>
-                            <option value="">Select Role</option>
-                            <option value="user" <?= isset($edit_user['role']) && $edit_user['role'] == 'user' ? 'selected' : '' ?>>User</option>
-                            <option value="student" <?= isset($edit_user['role']) && $edit_user['role'] == 'student' ? 'selected' : '' ?>>Student</option>
-                            <option value="teacher" <?= isset($edit_user['role']) && $edit_user['role'] == 'teacher' ? 'selected' : '' ?>>Teacher</option>
+                <div class="col">
+                    <label>Role</label>
+                    <select name="role" class="form-control" required>
+                        <option value="">Select Role</option>
+
+                        <option value="user" <?= isset($edit_user['role']) && $edit_user['role'] == 'user' ? 'selected' : '' ?>>User</option>
+                    
+                        <option value="teacher" <?= isset($edit_user['role']) && $edit_user['role'] == 'teacher' ? 'selected' : '' ?>>Teacher</option>
+
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] !== 'dean'): ?>
                             <option value="dean" <?= isset($edit_user['role']) && $edit_user['role'] == 'dean' ? 'selected' : '' ?>>Dean</option>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'Superadmin'): ?>
                             <option value="admin" <?= isset($edit_user['role']) && $edit_user['role'] == 'admin' ? 'selected' : '' ?>>Admin</option>
-                            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'Superadmin'): ?>
-                                <option value="Superadmin" <?= isset($edit_user['role']) && $edit_user['role'] == 'Superadmin' ? 'selected' : '' ?>>Superadmin</option>
-                            <?php endif; ?>
-                        </select>
-                    </div>
+                            <option value="Superadmin" <?= isset($edit_user['role']) && $edit_user['role'] == 'Superadmin' ? 'selected' : '' ?>>Superadmin</option>
+                        <?php endif; ?>
+                    </select>
+                </div>
+            </div>
+
                     <div class="col">
                         <label>School ID</label>
                         <input type="number" name="school_id" class="form-control" value="<?= htmlspecialchars($edit_user['school_id'] ?? '') ?>" required>
@@ -168,22 +175,35 @@ if (isset($_GET['edit_id'])) {
     </div>
 
 <?php
-
-
 if ($_SESSION['role'] === 'Superadmin') {
     // Superadmin sees Admins and Deans from ALL schools
-    $query = "SELECT * FROM users WHERE role IN ('admin', 'dean') ORDER BY created_at ASC";
+    $query = "SELECT * FROM users 
+              WHERE role IN ('admin', 'dean') 
+              ORDER BY created_at ASC";
+
 } else if ($_SESSION['role'] === 'admin') {
-    // Admin sees all users from their school EXCEPT Superadmin
+    // Admin sees only Deans from their school
     $school_id = $_SESSION['school_id'];
-    $query = "SELECT * FROM users WHERE role != 'Superadmin' AND school_id = $school_id ORDER BY created_at ASC";
+    $query = "SELECT * FROM users 
+              WHERE role = 'dean' 
+              AND school_id = $school_id 
+              ORDER BY created_at ASC";
+
+} else if ($_SESSION['role'] === 'dean') {
+    // Dean sees Teachers and Users from their school
+    $school_id = $_SESSION['school_id'];
+    $query = "SELECT * FROM users 
+              WHERE role IN ('teacher', 'user') 
+              AND school_id = $school_id 
+              ORDER BY created_at ASC";
+
 } else {
     die("Unauthorized Access");
 }
 
-
 $result = mysqli_query($conn, $query);
 ?>
+
 
 <div class="table-responsive">
     <table class="table table-bordered table-striped table-hover">
@@ -210,7 +230,7 @@ $result = mysqli_query($conn, $query);
                     <td><?= htmlspecialchars($user['school_id']) ?></td>
                     <td><?= $user['created_at'] ?></td>
                     <td>
-                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'Superadmin'])): ?>
+                        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['dean','admin', 'Superadmin'])): ?>
                             <a href="?edit_id=<?= $user['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
                             <a href="?delete_id=<?= $user['id'] ?>" class="btn btn-sm btn-danger"
                                onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>

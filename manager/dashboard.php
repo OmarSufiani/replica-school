@@ -94,8 +94,10 @@ if (!isset($_SESSION['user_id'])) {
                 <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
                 <a class="btn btn-primary" href="active_students.php">➕ Check Students Promotion Status</a>
                     <a class="btn btn-primary" href="edit_student.php">➕ Edit Student</a>
-                <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
+              
                 <a class="btn btn-primary" href="manage_teachers.php">➕ Manage_Teachers</a>
+                 <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
+                   <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
 
                 <?php endif; ?>
 

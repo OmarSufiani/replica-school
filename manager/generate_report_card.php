@@ -300,6 +300,48 @@ function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
         ];
     }
 
+//ASSIGN TEACHERS NAME,
+
+$teacher_name = "";
+$teacherComment = ""; // your existing variable
+
+$stmt = $conn->prepare("
+    SELECT name 
+    FROM class_teachers 
+    WHERE class_id = ? AND school_id = ? 
+    LIMIT 1
+");
+$stmt->bind_param("ii", $class_id, $school_id);
+$stmt->execute();
+$stmt->bind_result($teacher_name);
+$stmt->fetch();
+$stmt->close();
+
+if (!$teacher_name) {
+    $teacher_name = "Class Teacher"; // fallback
+}
+
+// --- Get HOI (Dean) Name ---
+$hoi_name = "";
+$sql2 = "SELECT CONCAT(FirstName, ' ', LastName) 
+         FROM users 
+         WHERE role = 'admin' AND school_id = ? 
+         LIMIT 1";
+
+if ($stmt2 = $conn->prepare($sql2)) {
+    $stmt2->bind_param("i", $school_id);
+    $stmt2->execute();
+    $stmt2->bind_result($hoi_name);
+    $stmt2->fetch();
+    $stmt2->close();
+}
+
+if (!$hoi_name) {
+    $hoi_name = "Head of Institution"; // fallback
+}
+
+
+
     // === Compute overall average for student ===
     $totalScore = 0;
     $subjectCount = count($studentScores);
@@ -381,7 +423,11 @@ $html .= "
     <div style='width: 65%;'>
         <p><strong>Class Position:</strong> {$studentClassRank}/{$totalStudentsInClass}</p>
         <p><strong>Overall Position:</strong> {$studentGradeRank}/{$totalInGrade}</p>
-        <h3 style='margin-top: 5px;'>Teacher's Comment:</h3>
+
+
+
+
+        <h3 style='margin-top: 5px;'>Teacher:{$teacher_name}'s Comment:</h3>
         <p style='font-size: 15px; margin-bottom: 0;'>$teacherComment</p>
     </div> <br>
 
@@ -420,8 +466,8 @@ if ($chartUrl) {
 // Signatures at bottom
 $html .= "
 <div style='margin-top: 20px; font-size: 13px; clear: both;'>
-    <p>HOI's name ........................................ .................Signature .............................................................................</p>
-    <p>Teacher's name ....................................................... Signature ............................................................................</p>
+    <p>HOI's name ............{$hoi_name}........ .............Signature .............................................................................</p>
+    <p>Teacher's name .......{$teacher_name}................... Signature ............................................................................</p>
 </div>
 </div>"; // end main container
 
