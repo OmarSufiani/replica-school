@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 24, 2025 at 01:13 PM
+-- Generation Time: Aug 25, 2025 at 08:21 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -75,6 +75,14 @@ CREATE TABLE `class_teachers` (
   `class_id` int(11) NOT NULL,
   `school_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `class_teachers`
+--
+
+INSERT INTO `class_teachers` (`id`, `name`, `class_id`, `school_id`) VALUES
+(1, 'Amina Gakurya', 48, 2),
+(2, 'Omar Sufiani', 50, 2);
 
 -- --------------------------------------------------------
 
@@ -150,21 +158,6 @@ CREATE TABLE `score` (
   `teacher_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `score`
---
-
-INSERT INTO `score` (`id`, `std_id`, `subject_id`, `term`, `exam_type`, `class_id`, `Score`, `performance`, `tcomments`, `school_id`, `teacher_id`, `created_at`) VALUES
-(28, 27, 22, 'Term 1', 'CAT', 50, 60, 'M.E', 'Good', 2, 24, '2025-08-18 18:16:05'),
-(29, 27, 24, 'Term 1', 'CAT', 50, 56, 'M.E', 'Good', 2, 24, '2025-08-18 18:16:16'),
-(30, 27, 23, 'Term 1', 'CAT', 50, 45, 'A.E', 'Average', 2, 24, '2025-08-18 18:16:26'),
-(31, 27, 26, 'Term 1', 'CAT', 50, 12, 'B.E', 'Put more effort', 2, 24, '2025-08-18 18:16:36'),
-(32, 27, 18, 'Term 1', 'CAT', 50, 78, 'E.E', 'Excellent', 2, 24, '2025-08-18 18:16:45'),
-(33, 27, 16, 'Term 1', 'CAT', 50, 70, 'E.E', 'Excellent', 2, 24, '2025-08-18 18:16:52'),
-(34, 27, 27, 'Term 1', 'CAT', 50, 80, 'E.E', 'Excellent', 2, 24, '2025-08-18 18:17:03'),
-(35, 27, 21, 'Term 1', 'CAT', 50, 49, 'A.E', 'Average', 2, 24, '2025-08-18 18:17:10'),
-(36, 27, 17, 'Term 1', 'CAT', 50, 52, 'M.E', 'Good', 2, 24, '2025-08-18 18:42:14');
 
 -- --------------------------------------------------------
 
@@ -354,11 +347,9 @@ CREATE TABLE `teacher` (
 
 INSERT INTO `teacher` (`id`, `user_id`, `name`, `school_id`, `enrolment_no`, `date_hired`) VALUES
 (17, 164, 'ISSA Mwikali', 2, 'ZIBANI001', '2025-08-21'),
-(24, 166, 'Taabu Mafimbo', 2, 'ZIBANI002', '2025-08-13'),
 (26, 167, 'Ali Sudi', 3, 'PUNGU002', '2025-08-20'),
 (27, 172, 'Amina Gakurya', 2, 'ZIBANI003', '2025-08-18'),
-(28, 171, 'HAMISI HINDI', 2, 'ZIBANI004', '2025-08-09'),
-(29, 165, 'Omar Sufiani', 2, 'ZIBANI005', '2025-08-14');
+(28, 171, 'HAMISI HINDI', 2, 'ZIBANI004', '2025-08-09');
 
 -- --------------------------------------------------------
 
@@ -381,15 +372,6 @@ CREATE TABLE `tsubject_class` (
 INSERT INTO `tsubject_class` (`id`, `teacher_id`, `subject_id`, `class_id`, `school_id`) VALUES
 (44, 26, 39, 42, 3),
 (45, 26, 43, 42, 3),
-(46, 24, 16, 50, 2),
-(47, 24, 18, 50, 2),
-(48, 24, 17, 50, 2),
-(49, 24, 21, 50, 2),
-(50, 24, 22, 50, 2),
-(51, 24, 23, 50, 2),
-(52, 24, 24, 50, 2),
-(53, 24, 26, 50, 2),
-(54, 24, 27, 50, 2),
 (55, 27, 16, 52, 2),
 (56, 27, 17, 52, 2),
 (57, 27, 18, 52, 2),
@@ -406,17 +388,7 @@ INSERT INTO `tsubject_class` (`id`, `teacher_id`, `subject_id`, `class_id`, `sch
 (68, 28, 23, 53, 2),
 (69, 28, 25, 53, 2),
 (70, 28, 26, 53, 2),
-(71, 28, 27, 53, 2),
-(72, 29, 16, 51, 2),
-(73, 29, 17, 51, 2),
-(74, 29, 18, 51, 2),
-(75, 29, 21, 51, 2),
-(76, 29, 22, 51, 2),
-(77, 29, 23, 51, 2),
-(78, 29, 24, 51, 2),
-(79, 29, 25, 51, 2),
-(80, 29, 26, 51, 2),
-(81, 29, 27, 51, 2);
+(71, 28, 27, 53, 2);
 
 -- --------------------------------------------------------
 
@@ -441,7 +413,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `FirstName`, `LastName`, `email`, `password`, `role`, `school_id`, `created_at`) VALUES
 (83, 'Abdalla', 'Juma', 'sudi@gmail.com', '$2y$10$e9ilZwRO9SvXg8JjzS3Cd.6roVI6qK1DJX0rYDiw5MscET.PT8j3W', 'user', 1, '2025-08-14 07:25:55'),
-(164, 'ISSA', 'Mwikali', 'issa@gmail.com', '$2y$10$35s9Xho7nNrQo81rW0TXH.9yAqEsyIbiQbqBiSsUEM2jOKh8W3h3a', 'teacher', 2, '2025-08-14 09:39:49'),
+(164, 'ISSA', 'Mwikali', 'issa@gmail.com', '$2y$10$35s9Xho7nNrQo81rW0TXH.9yAqEsyIbiQbqBiSsUEM2jOKh8W3h3a', 'admin', 2, '2025-08-14 09:39:49'),
 (165, 'Omar', 'Sufiani', 'hommiedelaco@gmail.com', '$2y$10$Y7NXG4eKbXldOnU6Dxd3W.zgyg5Ud5GWy2RWUz/d7kOde.QLDkn8W', 'dean', 2, '2025-08-14 09:44:15'),
 (166, 'Taabu', 'Mafimbo', 'T@GMAIL.COM', '$2y$10$uGibWi0TPFV4g4bUMWvEdeK3OMuefnymi.Nn3aYFOqMB/LkUlrX3W', 'dean', 2, '2025-08-14 11:29:53'),
 (167, 'Ali', 'Sudi', 'a@gmail.com', '$2y$10$53Fzq6qg3PAkTAWxVWB.1uiehNwKPJcaqkZj8j5meFiRYBUjW4MZW', 'Superadmin', 3, '2025-08-18 10:18:32'),
@@ -590,7 +562,7 @@ ALTER TABLE `class`
 -- AUTO_INCREMENT for table `class_teachers`
 --
 ALTER TABLE `class_teachers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `exam`
