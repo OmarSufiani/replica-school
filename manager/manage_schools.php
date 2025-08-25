@@ -1,5 +1,5 @@
 <?php
-session_start(); // start the session
+if (session_status() == PHP_SESSION_NONE) session_start(); // start the session
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -55,19 +55,9 @@ $schools = $result->fetch_all(MYSQLI_ASSOC);
 $conn->close();
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Schools</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+
 <div class="container mt-5">
 
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">
-    &larr; Back to Dashboard
-</a>
     <h2 class="mb-4">Manage School Status</h2>
 
     <?php if ($success): ?>
@@ -125,5 +115,3 @@ $conn->close();
         </table>
     </div>
 </div>
-</body>
-</html>

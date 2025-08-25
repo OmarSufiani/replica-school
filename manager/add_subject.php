@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -30,13 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "❌ Please select at least one subject.";
     } else {
         $added = 0;
+        $duplicates = [];
+
         foreach ($subjects_selected as $name) {
             // Determine if subject is compulsory
             $is_compulsory = ($name === 'CRE' || $name === 'IRE') ? 0 : 1;
 
-            // Prevent duplicates
-            $stmt_check = $conn->prepare("SELECT id FROM subject WHERE name=? AND school_id=?");
-            $stmt_check->bind_param("si", $name, $school_id);
+                    // Prevent duplicates (check by name + school_id + compulsory flag)
+            $stmt_check = $conn->prepare("SELECT id FROM subject WHERE name=? AND school_id=? AND is_compulsory=?");
+            $stmt_check->bind_param("sii", $name, $school_id, $is_compulsory);
             $stmt_check->execute();
             $stmt_check->store_result();
 
@@ -49,13 +51,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
             }
             $stmt_check->close();
+
         }
 
-        $message = "✅ Added {$added} new subject(s)!";
+        if ($added > 0 && empty($duplicates)) {
+            $message = "✅ Successfully added {$added} new subject(s)!";
+        } elseif ($added > 0 && !empty($duplicates)) {
+            $message = "⚠️ Added {$added} subject(s), but these already exist: " . implode(", ", $duplicates);
+        } else {
+            $message = "❌ No new subjects were added. These already exist: " . implode(", ", $duplicates);
+        }
     }
 
+    // ✅ Stay in dashboard with message
     $_SESSION['message'] = $message;
-    header("Location: " . $_SERVER['PHP_SELF']);
+    header("Location: dashboard.php?page=add_subject");
     exit();
 }
 
@@ -81,15 +91,14 @@ if (isset($_SESSION['message'])) {
 </head>
 <body class="container py-4">
 
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">&larr; Back to Dashboard</a>
-
 <h3 class="mb-3">Add Subjects</h3>
 
 <?php if ($message): ?>
-    <div id="message-box" class="alert <?= str_starts_with($message, '✅') ? 'alert-success' : 'alert-danger' ?>">
+    <div id="message-box" class="alert <?= str_starts_with($message, '✅') ? 'alert-success' : (str_starts_with($message, '⚠️') ? 'alert-warning' : 'alert-danger') ?>">
         <?= htmlspecialchars($message) ?>
     </div>
 <?php endif; ?>
+
 <form method="POST" class="border p-4 rounded bg-light shadow-sm">
     <div class="mb-3">
         <label class="form-label">Select Subjects Offered</label><br>
@@ -104,7 +113,7 @@ if (isset($_SESSION['message'])) {
             <div class="form-check">
                 <input class="form-check-input subject-checkbox" type="checkbox" name="subjects[]" value="<?= htmlspecialchars($sub) ?>" id="<?= htmlspecialchars($sub) ?>">
                 <label class="form-check-label" for="<?= htmlspecialchars($sub) ?>">
-                    <?= htmlspecialchars($sub) ?> <?= ($sub === 'CRE' || $sub === 'IRE') ? '(Optional Subjects)' : '' ?>
+                    <?= htmlspecialchars($sub) ?> <?= ($sub === 'CRE' || $sub === 'IRE') ? '(Optional Subject)' : '' ?>
                 </label>
             </div>
         <?php endforeach; ?>
@@ -122,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
     });
 
-    // Optional: if all individual boxes are checked/unchecked, update "Select All"
+    // Update "Select All" if all/none selected
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
             selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);

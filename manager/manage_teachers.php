@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 // ✅ Restrict to admin and teacher only
@@ -50,9 +50,7 @@ $result = $stmt->get_result();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-5">
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">
-    &larr; Back to Dashboard
-</a>
+
     <h2 class="mb-4">👨‍🏫 Manage Teachers</h2>
 
     <table class="table table-bordered table-striped">

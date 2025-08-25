@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['school_id'])) {
@@ -11,15 +11,16 @@ $school_id = $_SESSION['school_id'];
 $success = '';
 $error = '';
 
-// ✅ Fetch school code from schools table
+// ✅ Fetch school code
 $schoolQuery = $conn->prepare("SELECT school_code FROM school WHERE id = ?");
 $schoolQuery->bind_param("i", $school_id);
 $schoolQuery->execute();
 $schoolResult = $schoolQuery->get_result();
 $schoolRow = $schoolResult->fetch_assoc();
-$school_code = strtoupper($schoolRow['school_code']); // e.g. BOWA, ZIBANI
+$school_code = strtoupper($schoolRow['school_code']);
 $schoolQuery->close();
 
+// ✅ Show success after redirect
 if (isset($_SESSION['success'])) {
     $success = $_SESSION['success'];
     unset($_SESSION['success']);
@@ -33,15 +34,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($user_id) || empty($name)) {
         $error = "❌ All fields are required.";
     } else {
-        // ✅ Find last enrolment number for this school
-        $lastSql = $conn->prepare("SELECT enrolment_no FROM teacher WHERE school_id = ? ORDER BY id DESC LIMIT 1");
-        $lastSql->bind_param("i", $school_id);
-        $lastSql->execute();
-        $lastResult = $lastSql->get_result();
-        $lastRow = $lastResult->fetch_assoc();
+        // ✅ Prevent duplicate teacher for same user_id + school
+        $checkSql = $conn->prepare("SELECT id FROM teacher WHERE user_id = ? AND school_id = ?");
+        $checkSql->bind_param("ii", $user_id, $school_id);
+        $checkSql->execute();
+        $checkResult = $checkSql->get_result();
 
-                if ($lastRow) {
-                // Extract numeric part
+        if ($checkResult->num_rows > 0) {
+            $error = "❌ This teacher already exists.";
+        } else {
+            // ✅ Get last enrolment number
+            $lastSql = $conn->prepare("SELECT enrolment_no FROM teacher WHERE school_id = ? ORDER BY id DESC LIMIT 1");
+            $lastSql->bind_param("i", $school_id);
+            $lastSql->execute();
+            $lastResult = $lastSql->get_result();
+            $lastRow = $lastResult->fetch_assoc();
+
+            if ($lastRow) {
                 $lastNum = intval(substr($lastRow['enrolment_no'], strlen($school_code)));
                 $newNum = $lastNum + 1;
             } else {
@@ -49,24 +58,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $lastSql->close();
 
-            // ✅ Format as 3-digit number (001, 002, 003...)
             $enrolment_no = $school_code . str_pad($newNum, 3, "0", STR_PAD_LEFT);
 
+            // ✅ Insert new teacher
+            $stmt = $conn->prepare("INSERT INTO teacher (user_id, name, school_id, enrolment_no, date_hired) 
+                                    VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("isiss", $user_id, $name, $school_id, $enrolment_no, $date_hired);
 
-        // ✅ Insert new teacher
-        $stmt = $conn->prepare("INSERT INTO teacher (user_id, name, school_id, enrolment_no, date_hired) 
-                                VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("isiss", $user_id, $name, $school_id, $enrolment_no, $date_hired);
-
-        if ($stmt->execute()) {
-            $_SESSION['success'] = "✅ Teacher added successfully with Enrolment No: $enrolment_no";
-            header("Location: add_teacher.php");
-            exit();
-        } else {
-            $error = "❌ Error: " . $stmt->error;
+            if ($stmt->execute()) {
+                $_SESSION['success'] = "✅ Teacher added successfully with Enrolment No: $enrolment_no";
+                header("Location: dashboard.php?page=add_teacher");
+                exit();
+            } else {
+                $error = "❌ Error: " . $stmt->error;
+            }
+            $stmt->close();
         }
-
-        $stmt->close();
+        $checkSql->close();
     }
 }
 
@@ -102,8 +110,6 @@ $users = mysqli_query($conn, "
     </script>
 </head>
 <body class="container py-4">
-
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">&larr; Back to Dashboard</a>
 
 <h3 class="mb-3">Add Teacher</h3>
 

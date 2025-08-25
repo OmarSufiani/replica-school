@@ -1,5 +1,5 @@
 <?php 
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 // Only allow logged-in admins
@@ -98,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body class="bg-light">
 <div class="container mt-5">
 
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">&larr; Back to Dashboard</a>
+
 
 <div class="card shadow">
     <div class="card-header bg-primary text-white">

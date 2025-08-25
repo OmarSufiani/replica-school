@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 // Only allow logged-in admin
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $stmt->close();
-        header("Location: " . $_SERVER['PHP_SELF']);
+     header("Location: dashboard.php?page=add_class");
         exit();
     }
 }
@@ -42,11 +42,7 @@ if (isset($_SESSION['message'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Add Class</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -61,7 +57,7 @@ if (isset($_SESSION['message'])) {
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-body">
-            <a href="dashboard.php" class="btn btn-sm btn-outline-primary mb-3">&larr; Back to Dashboard</a>
+           
 
             <h4 class="mb-4">Add New Class</h4>
 
@@ -83,4 +79,4 @@ if (isset($_SESSION['message'])) {
     </div>
 </div>
 </body>
-</html>
+

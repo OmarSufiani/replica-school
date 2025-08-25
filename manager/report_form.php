@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['school_id'])) {
@@ -33,7 +33,7 @@ $selected_school_id = $school_id;
 <div class="container py-5">
     <h2 class="mb-4 text-primary">Generate Report Card</h2>
 
-    <a href="dashboard.php" class="btn btn-outline-primary mb-3">&larr; Back to Dashboard</a>
+    
 
     <form method="GET" action="generate_report_card.php" class="card p-4 shadow-sm">
 

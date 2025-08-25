@@ -1,5 +1,6 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
+
 include 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -26,7 +27,7 @@ unset($_SESSION['error']);
 <div class="container py-5">
     <h3 class="mb-4 text-center">Check Student Score</h3>
     <div class="mb-3">
-        <a href="dashboard.php" class="btn btn-outline-primary">&larr; Back to Dashboard</a>
+    
     </div>
 
     <?php if ($errorMsg): ?>

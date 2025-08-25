@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php'; // your database connection
 
 if (!isset($_SESSION['role'])) {
@@ -49,7 +49,7 @@ $result = mysqli_query($conn, $query);
 <body class="bg-light">
 
 <div class="container mt-4">
-    <a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">&larr; Back to Dashboard</a>
+  
     <h2 class="mb-4 text-center">List of Students</h2>
 
     <div class="table-responsive">

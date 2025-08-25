@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['school_id'])) {
@@ -68,13 +68,13 @@ try {
         }
 
         $_SESSION['message'] = trim($success . ' ' . $error);
-        header("Location: " . $_SERVER['PHP_SELF']);
+          header("Location: dashboard.php?page=student_subject");
         exit();
     }
 
 } catch (mysqli_sql_exception $e) {
     $_SESSION['message'] = "❌ Error: " . htmlspecialchars($e->getMessage());
-    header("Location: " . $_SERVER['PHP_SELF']);
+      header("Location: dashboard.php?page=student_subject");
     exit();
 }
 
@@ -103,7 +103,7 @@ unset($_SESSION['message']);
 <body class="bg-light">
 
 <div class="container mt-5">
-  <a href="dashboard.php" class="btn btn-outline-primary mb-4">&larr; Back to Dashboard</a>
+ 
   
   <div class="card shadow-sm">
     <div class="card-body">

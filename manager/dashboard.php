@@ -2,136 +2,198 @@
 session_start();
 include 'db.php';
 
+// Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
-    // Redirect to login page
     header('Location: ../login.php');
     exit();
 }
+
+$user_id = $_SESSION['user_id'];
+
+// Flash messages
+$success = $_SESSION['success'] ?? null;
+$error   = $_SESSION['error'] ?? null;
+unset($_SESSION['success'], $_SESSION['error']); // clear after showing
+
+// Fetch user info
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+
+// Fetch user's school name
+$schoolName = "";
+if (!empty($user['school_id'])) {
+    $stmt2 = $conn->prepare("SELECT school_name FROM school WHERE id = ?");
+    $stmt2->bind_param("i", $user['school_id']);
+    $stmt2->execute();
+    $stmt2->bind_result($schoolName);
+    $stmt2->fetch();
+    $stmt2->close();
+}
+
+// Decide which page to include
+$page = $_GET['page'] ?? 'partials/dashboard_content.php';
+if (!str_contains($page, ".php")) {
+    $page .= ".php";
+}
+$file = __DIR__ . "/" . ltrim($page, "/");
 ?>
 <!DOCTYPE html>
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard - Ramzy School System</title>
-    <!-- ✅ Bootstrap 5 CDN -->
-    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Makes it mobile-friendly -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Bigger buttons for touch */
-        .btn {
-            font-size: 1.2rem;
-            padding: 15px;
-        }
-        /* Card stretches for mobile */
-        .card {
-            width: 100%;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Dashboard - Ramzy School System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* Sidebar style */
+    #sidebarMenu {
+      min-width: 250px;
+      max-width: 250px;
+      background-color: #000; /* black sidebar */
+    }
+    #sidebarMenu .nav-link {
+      color: #ccc;
+      border-radius: 4px;
+    }
+    #sidebarMenu .nav-link:hover,
+    #sidebarMenu .nav-link.active {
+      background-color: #495057;
+      color: #fff;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body class="bg-light d-flex flex-column vh-100">
 
-<div class="container py-4">
-    <div class="card mx-auto shadow-lg">
-        <div class="card-body text-center">
-            <!-- Small Bootstrap Back Button -->
-            <div class="text-start mb-3">
-                            <div class="d-flex justify-content-end mb-3">
-                    <a href="../logout.php" class="btn btn-outline-primary btn-sm">
-                        &larr; Logout
-                    </a>
-                </div>
+<!-- Top Navbar -->
+<nav class="navbar navbar-dark bg-dark sticky-top shadow">
+  <div class="container-fluid">
+    <!-- Sidebar Toggle (mobile only) -->
+    <button class="btn btn-outline-light me-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+      ☰
+    </button>
 
-            </div>
+    <!-- School Name -->
+    <a class="navbar-brand fw-bold" href="dashboard.php">
+      <?= htmlspecialchars($schoolName ?: "No School Assigned") ?>
+    </a>
 
-            <h2 class="mb-4">📘 School Dashboard</h2>
-        
-
-                <!-- Show logged-in user -->
-                <p class="text-muted mb-4">
-                    Logged in as: <strong>
-                        <?= htmlspecialchars($_SESSION['FirstName'] . ' ' . $_SESSION['LastName']) ?>
-                    </strong> 
-                    (Role: <?= htmlspecialchars($_SESSION['role']) ?>)
-                </p>
-
-                <br>
-
-            <div class="d-grid gap-3">
-            <?php if ($_SESSION['role'] === 'Superadmin'): ?>
-                    <a class="btn btn-primary" href="add_school.php">➕ Add School</a>
-                    <a class="btn btn-primary" href="manage_users.php">➕ Manage Admins</a>
-                
-                     <a class="btn btn-primary" href="manage_schools.php">➕ Desable School</a>
-                    <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-                <?php endif; ?>
-
-
-
-                <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a class="btn btn-primary" href="all_users.php">➕ Statistics</a>
-                     <a class="btn btn-primary" href="csv.php">📊 View  School Report</a>
-                    <a class="btn btn-primary" href="active_students.php">➕ Students Subject Auto Assign to Next Year</a>
-                     <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
-                   
-                    <a class="btn btn-primary" href="edit_student.php">➕ Edit Student</a>
-                     <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-                <?php endif; ?>
-
-                <?php if ($_SESSION['role'] === 'dean'): ?>
-                    <a class="btn btn-primary" href="add_class.php">➕ Add Class</a>
-                    <a class="btn btn-primary" href="add_subject.php">➕ Add Subjects</a>
-                    <a class="btn btn-primary" href="add_student.php">➕ Add Student</a>
-                    <a class="btn btn-primary" href="student_subject.php">📚 Add Student_Subject_Class</a>
-                    <a class="btn btn-primary" href="view_students.php">➕ View Students</a>
-                    <a class="btn btn-primary" href="add_teacher.php">➕ Add Teacher</a>
-                    <a class="btn btn-primary" href="tsubject_class.php">➕ Teacher Subject/Class</a>
-                    <a class="btn btn-primary" href="add_classteacher.php">➕ Assign Class Teacher</a>
-                    <a class="btn btn-primary" href="delete_student.php">➕ View Students </a>
-                     <a class="btn btn-primary" href="delete_scores.php">➕ Manage Scores </a>
-                    <a class="btn btn-primary" href="file.php">➕ All files</a>
-                    <a class="btn btn-primary" href="csv.php">📊 View Report</a>
-                     <a class="btn btn-primary" href="view_exams.php">➕ Exams</a>
-                <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
-                <a class="btn btn-primary" href="active_students.php">➕ Check Students Promotion Status</a>
-                    <a class="btn btn-primary" href="edit_student.php">➕ Edit Student</a>
-              
-                <a class="btn btn-primary" href="manage_teachers.php">➕ Manage_Teachers</a>
-                 <a class="btn btn-primary" href="manage_users.php">➕ Manage_users</a>
-                   <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-
-                <?php endif; ?>
-
-                    <?php if ($_SESSION['role'] === 'teacher'): ?>
-                    <a class="btn btn-primary mb-3" href="add_score.php">➕ Add Score</a>
-                  <a class="btn btn-primary mb-3" href="view_results.php">➕ View Results</a>
-                <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
-                <a class="btn btn-primary" href="upload_exam.php">➕ Upload Exam</a>
-                    <a class="btn btn-primary" href="view_exams.php">➕ Exams</a>
-                <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-                
-
-                <?php endif; ?>
-
-                                <!-- These buttons are visible to all users -->
-                
-                <?php if ($_SESSION['role'] === 'user'): ?>
-                
-                <a class="btn btn-primary" href="report_form.php">📄 Download Report Form</a>
-             <!-- <a class="btn btn-primary mb-3" href="edit_score.php">➕ Edit Score</a>-->
-                
-                <a class="btn btn-secondary" href="update_user.php">⚙️ Settings</a>
-                <?php endif; ?>
-                <!-- Settings visible to all -->
-
-                
-                
-              
-            </div>
-        </div>
+    <!-- Right Side -->
+    <div class="d-flex align-items-center ms-auto">
+      <span class="text-white me-3">
+        <?= htmlspecialchars($user['FirstName'] . " " . $user['LastName']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)
+      </span>
+      <a href="../logout.php" class="btn btn-sm btn-outline-light">Logout</a>
     </div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse show vh-100">
+      <div class="position-sticky pt-3">
+        <ul class="nav flex-column mb-auto" id="menuLinks">
+          <li>
+            <a class="nav-link text-white <?= (!isset($_GET['page']) || $_GET['page'] === 'dashboard_content') ? 'active' : '' ?>" 
+               href="dashboard.php?page=dashboard_content">🏠 Dashboard</a>
+          </li>
+          <?php if ($_SESSION['role'] === 'Superadmin'): ?>
+            <li><a href="dashboard.php?page=add_school" class="nav-link">➕ Add School</a></li>
+            <li><a href="dashboard.php?page=manage_users" class="nav-link">👤 Manage Admins</a></li>
+            <li><a href="dashboard.php?page=manage_schools" class="nav-link">🏫 Disable School</a></li>
+            <li><a href="dashboard.php?page=update_user" class="nav-link">⚙️ Settings</a></li>
+          <?php endif; ?>
+
+          <?php if ($_SESSION['role'] === 'admin'): ?>
+            <li><a href="dashboard.php?page=all_users" class="nav-link">📊 Statistics</a></li>
+            <li><a href="dashboard.php?page=csv" class="nav-link">📑 School Report</a></li>
+            <li><a href="dashboard.php?page=active_students" class="nav-link">🔄 Student Promotion</a></li>
+            <li><a href="dashboard.php?page=manage_users" class="nav-link">👤 Manage Users</a></li>
+            <li><a href="dashboard.php?page=edit_student" class="nav-link">✏️ Edit Student</a></li>
+            <li><a href="dashboard.php?page=update_user" class="nav-link">⚙️ Settings</a></li>
+          <?php endif; ?>
+
+          <?php if ($_SESSION['role'] === 'dean'): ?>
+            <li><a href="dashboard.php?page=add_class" class="nav-link">➕ Add Class</a></li>
+            <li><a href="dashboard.php?page=add_subject" class="nav-link">📚 Add Subject</a></li>
+            <li><a href="dashboard.php?page=add_student" class="nav-link">👩‍🎓 Add Student</a></li>
+            <li><a href="dashboard.php?page=student_subject" class="nav-link">📘 Student Subjects</a></li>
+            <li><a href="dashboard.php?page=view_students" class="nav-link">👀 View Students</a></li>
+            <li><a href="dashboard.php?page=add_teacher" class="nav-link">👨‍🏫 Add Teacher</a></li>
+            <li><a href="dashboard.php?page=tsubject_class" class="nav-link">📖 Teacher Subject/Class</a></li>
+            <li><a href="dashboard.php?page=csv" class="nav-link">📑 View Report</a></li>
+            <li><a href="dashboard.php?page=view_exams" class="nav-link">📝 Exams</a></li>
+            <li><a href="dashboard.php?page=report_form" class="nav-link">📄 Report Form</a></li>
+            <li><a href="dashboard.php?page=manage_teachers" class="nav-link">👨‍🏫 Manage Teachers</a></li>
+            <li><a href="dashboard.php?page=manage_users" class="nav-link">👤 Manage Users</a></li>
+            <li><a href="dashboard.php?page=update_user" class="nav-link">⚙️ Settings</a></li>
+          <?php endif; ?>
+
+          <?php if ($_SESSION['role'] === 'teacher'): ?>
+            <li><a href="dashboard.php?page=add_score" class="nav-link">➕ Add Score</a></li>
+            <li><a href="dashboard.php?page=view_results" class="nav-link">📊 View Results</a></li>
+            <li><a href="dashboard.php?page=report_form" class="nav-link">📄 Report Form</a></li>
+            <li><a href="dashboard.php?page=upload_exam" class="nav-link">⬆️ Upload Exam</a></li>
+            <li><a href="dashboard.php?page=view_exams" class="nav-link">📝 Exams</a></li>
+            <li><a href="dashboard.php?page=update_user" class="nav-link">⚙️ Settings</a></li>
+          <?php endif; ?>
+
+          <?php if ($_SESSION['role'] === 'user'): ?>
+            <li><a href="dashboard.php?page=report_form" class="nav-link">📄 Report Form</a></li>
+            <li><a href="dashboard.php?page=update_user" class="nav-link">⚙️ Settings</a></li>
+          <?php endif; ?>
+        </ul>
+      </div>
+    </nav>
+<main class="flex-grow-1 p-4 col-md-9 ms-sm-auto col-lg-10">
+    <?php
+    $page = $_GET['page'] ?? 'dashboard_content';
+    $allowed_pages = [
+    'dashboard_content',
+        'manage_users',
+        'all_users',
+        'csv',
+        'edit_student',
+        'active_students',
+         'update_user',
+         'add_score',
+         'view_results',
+         'report_form',
+         'upload_exam',
+         'view_exams',
+         'add_school',
+         'manage_schools',
+         'add_class',
+         'add_subject',
+         'add_student',
+         'student_subject',
+         'view_students',
+         'add_teacher',
+         'tsubject_class',
+         'manage_teachers',
+
+       
+        // add all other pages here
+    ];
+
+    if (in_array($page, $allowed_pages)) {
+        include $page . '.php';
+    } else {
+        echo '<div class="alert alert-danger">Page not found.</div>';
+    }
+    ?>
+</main>
+
+  </div>
 </div>
 
-<!-- ✅ Bootstrap JS -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

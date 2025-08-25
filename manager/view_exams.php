@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
 // ✅ Only teachers and deans can view exams
@@ -30,9 +30,6 @@ $result = $stmt->get_result();
 </head>
 <body class="container mt-4">
 
-<a href="dashboard.php" class="btn btn-outline-primary mb-4 btn-sm">
-    &larr; Back to Dashboard
-</a>
     <h2 class="mb-4">Available Exams</h2>
 
     <table class="table table-bordered table-striped">

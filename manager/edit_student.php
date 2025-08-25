@@ -1,16 +1,17 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) session_start();
 include 'db.php';
 
-// ✅ Only admin or dean can access
+// Only admin or dean can access
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin','dean'])) {
-    die("<div class='alert alert-danger'>Unauthorized access</div>");
+    echo "<div class='alert alert-danger'>Unauthorized access</div>";
+    return;
 }
 
 $school_id = $_SESSION['school_id'];
 $message = "";
 
-// ✅ Handle status update
+// Handle status update
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['student_id'])) {
     $student_id = intval($_POST['student_id']);
     $status     = $_POST['status'];
@@ -24,40 +25,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['student_id'])) {
         $_SESSION['flash_msg'] = "<div class='alert alert-danger' id='flashMsg'>❌ Failed to update status.</div>";
     }
 
-    // Redirect to avoid resubmission
-    header("Location: " . $_SERVER['PHP_SELF']);
+    // Redirect to keep inside dashboard include
+    header("Location: dashboard.php?page=edit_student");
     exit();
 }
 
-// ✅ Flash message
+// Flash message
 if (isset($_SESSION['flash_msg'])) {
     $message = $_SESSION['flash_msg'];
     unset($_SESSION['flash_msg']);
 }
 
-// ✅ Fetch students belonging to this school + their class
+// Fetch students with class name
 $sql = "SELECT s.id, s.firstname, s.lastname, s.gender, s.dob, 
                s.guardian_name, s.guardian_phone, s.address, s.status,
-               c.name AS class_name       -- ✅ get class name
+               c.name AS class_name
         FROM student s
-        LEFT JOIN class c ON s.class_id = c.id   -- ✅ join class table
+        LEFT JOIN class c ON s.class_id = c.id
         WHERE s.school_id=?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $school_id);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Students List</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</head>
-<body class="bg-light p-4">
-<div class="container">
-    <a href="dashboard.php" class="btn btn-sm btn-outline-primary mb-3">&larr; Back to Dashboard</a>
+
+<div class="container py-4">
     <h2 class="mb-4">Students List</h2>
 
     <?= $message ?>
@@ -67,7 +59,7 @@ $result = $stmt->get_result();
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Class</th> <!-- ✅ Added Class column -->
+                <th>Class</th>
                 <th>Gender</th>
                 <th>DOB</th>
                 <th>Guardian</th>
@@ -78,11 +70,11 @@ $result = $stmt->get_result();
             </tr>
         </thead>
         <tbody>
-            <?php while ($row = $result->fetch_assoc()) { ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
                 <tr>
                     <td><?= $row['id'] ?></td>
                     <td><?= htmlspecialchars($row['firstname'] . ' ' . $row['lastname']) ?></td>
-                    <td><?= htmlspecialchars($row['class_name'] ?? 'N/A') ?></td> <!-- ✅ Show class -->
+                    <td><?= htmlspecialchars($row['class_name'] ?? 'N/A') ?></td>
                     <td><?= htmlspecialchars($row['gender']) ?></td>
                     <td><?= htmlspecialchars($row['dob']) ?></td>
                     <td><?= htmlspecialchars($row['guardian_name']) ?></td>
@@ -90,7 +82,6 @@ $result = $stmt->get_result();
                     <td><?= htmlspecialchars($row['address']) ?></td>
                     <td><span class="badge bg-info"><?= htmlspecialchars($row['status']) ?></span></td>
                     <td>
-                        <!-- ✅ Open Modal Button -->
                         <button 
                             class="btn btn-sm btn-warning" 
                             data-bs-toggle="modal" 
@@ -102,12 +93,12 @@ $result = $stmt->get_result();
                         </button>
                     </td>
                 </tr>
-            <?php } ?>
+            <?php endwhile; ?>
         </tbody>
     </table>
 </div>
 
-<!-- ✅ Bootstrap Modal -->
+<!-- Bootstrap Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -138,7 +129,7 @@ $result = $stmt->get_result();
 </div>
 
 <script>
-// ✅ Pass student data to modal
+// Pass student data to modal
 const editModal = document.getElementById('editModal');
 editModal.addEventListener('show.bs.modal', event => {
     const button = event.relatedTarget;
@@ -151,9 +142,9 @@ editModal.addEventListener('show.bs.modal', event => {
     document.getElementById('studentStatus').value = status;
 });
 
-// ✅ Auto-hide message after 3s
+// Auto-hide flash message
 setTimeout(() => {
-    let msg = document.getElementById('flashMsg');
+    const msg = document.getElementById('flashMsg');
     if (msg) {
         msg.style.transition = "opacity 1s";
         msg.style.opacity = "0";
@@ -161,5 +152,3 @@ setTimeout(() => {
     }
 }, 3000);
 </script>
-</body>
-</html>
