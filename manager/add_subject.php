@@ -36,9 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Determine if subject is compulsory
             $is_compulsory = ($name === 'CRE' || $name === 'IRE') ? 0 : 1;
 
-                    // Prevent duplicates (check by name + school_id + compulsory flag)
-            $stmt_check = $conn->prepare("SELECT id FROM subject WHERE name=? AND school_id=? AND is_compulsory=?");
-            $stmt_check->bind_param("sii", $name, $school_id, $is_compulsory);
+            // ✅ Prevent duplicates (check by name + school_id)
+            $stmt_check = $conn->prepare("SELECT id FROM subject WHERE name=? AND school_id=?");
+            $stmt_check->bind_param("si", $name, $school_id);
             $stmt_check->execute();
             $stmt_check->store_result();
 
@@ -49,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $added++;
                 }
                 $stmt->close();
+            } else {
+                // ✅ Collect duplicates for feedback
+                $duplicates[] = $name;
             }
             $stmt_check->close();
-
         }
 
         if ($added > 0 && empty($duplicates)) {
@@ -74,6 +76,7 @@ if (isset($_SESSION['message'])) {
     unset($_SESSION['message']);
 }
 ?>
+
 <!DOCTYPE html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -139,3 +142,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

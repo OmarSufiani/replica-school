@@ -32,84 +32,88 @@ function getStudentProgress($student_id, $school_id, $conn) {
     $stmt->close();
     return $progress;
 }
-
 function generateProgressChart($progress) {
     if (empty($progress)) return null;
 
-    $examColors = [
-        'CAT' => 'red',
-        'Mid-Term' => 'green',
-        'End-Term' => 'blue',
-        'Term1' => 'orange',
-        'Term2' => 'purple',
-        'Term3' => 'brown'
-    ];
+    $examOrder = ['CAT', 'Mid Term', 'End Term'];
+    $points = [];
+    $labels = [];
 
-    $datasets = [];
-    foreach ($examColors as $exam => $color) {
-        $datasets[$exam] = [
-            'label' => $exam,
-            'data' => [],
-            'borderColor' => $color,
-            'fill' => false,
-            'tension' => 0.1,
-            'pointRadius' => 5
-        ];
-    }
-
-    // Offsets to separate points inside a year
-    $offsets = [
-        'CAT' => -0.25,
-        'Mid-Term' => -0.15,
-        'End-Term' => -0.05,
-        'Term1' => 0.05,
-        'Term2' => 0.15,
-        'Term3' => 0.25
-    ];
-
-    // Only add points that exist
+    // Collect points and labels
     foreach ($progress as $year => $terms) {
         foreach ($terms as $term => $exams) {
-            foreach ($examColors as $exam => $color) {
-                if (isset($exams[$exam])) {
-                    $datasets[$exam]['data'][] = [
-                        'x' => $year + $offsets[$exam],
-                        'y' => $exams[$exam]
-                    ];
-                }
+            foreach ($examOrder as $exam) {
+                $labels[] = "$year $exam " . str_replace("Term", "", $term);
+                $points[] = isset($exams[$exam]) ? $exams[$exam] : null;
             }
         }
     }
 
-    $years = array_keys($progress);
-    $minYear = min($years) - 1; // previous year
-    $maxYear = max($years) + 1;
+    $totalPoints = count($points);
+    $maxWidthUnits = 27; // max visual width units for spacing (~1cm per exam type)
+
+    // Calculate dynamic horizontal spacing
+    $spacing = $maxWidthUnits / max($totalPoints - 1, 1); // divide available width by points-1
+
+    // Main dataset with dynamic horizontal spacing
+    $dataWithX = [];
+    foreach ($points as $i => $point) {
+        $dataWithX[] = ["x" => $i * $spacing, "y" => $point];
+    }
+
+    $dataset = [
+        "label" => "Student Progress",
+        "data" => $dataWithX,
+        "borderColor" => "blue",
+        "backgroundColor" => "blue",
+        "fill" => false,
+        "tension" => 0.3,
+        "pointRadius" => 5,
+        "spanGaps" => true
+    ];
+
+    // Dummy dataset to force y-axis 0–100 fully
+    $dummyDataset = [
+        "label" => "",
+        "data" => array_merge([0], array_fill(0, $totalPoints, null), [100]),
+        "borderColor" => "rgba(0,0,0,0)",
+        "backgroundColor" => "rgba(0,0,0,0)",
+        "pointRadius" => 0,
+        "fill" => false
+    ];
 
     $chartConfig = [
-        "type" => "scatter",
-        "data" => ["datasets" => array_values($datasets)],
+        "type" => "line",
+        "data" => [
+            "labels" => $labels,
+            "datasets" => [$dataset, $dummyDataset]
+        ],
         "options" => [
             "plugins" => [
                 "title" => [
                     "display" => true,
-                    "text" => "Student Progress per Year (Only Exams Done)"
-                ],
-                "legend" => ["display" => true]
+                    "text" => "Student Progress (CAT → Mid Term → End Term)"
+                ]
             ],
             "scales" => [
                 "x" => [
                     "type" => "linear",
-                    "min" => $minYear,
-                    "max" => $maxYear,
-                    "title" => ["display" => true, "text" => "Year"],
+                    "title" => ["display" => true, "text" => "Exams"],
                     "ticks" => [
                         "stepSize" => 1,
-                        "callback" => "function(value){ return Math.round(value); }"
+                        "font" => ["size" => 10]
                     ]
                 ],
                 "y" => [
+                    "type" => "linear",
+                    "beginAtZero" => true,
                     "min" => 0,
                     "max" => 100,
+                    "ticks" => [
+                        "stepSize" => 10,
+                        "callback" => "function(value) { return value; }",
+                        "font" => ["size" => 10]
+                    ],
                     "title" => ["display" => true, "text" => "Score"]
                 ]
             ]
@@ -124,6 +128,9 @@ function generateProgressChart($progress) {
 
     return "data:image/png;base64," . base64_encode($png);
 }
+
+
+
 
 function generateStudentReport($student_id, $term, $exam_type, $year, $conn) {
     // Fetch student info and class via student_subject
@@ -427,7 +434,7 @@ $html .= "
 
 
 
-        <h3 style='margin-top: 5px;'>Teacher:{$teacher_name}'s Comment:</h3>
+        <h3 style='margin-top: 5px;'>Teacher:{$teacher_name}'s:</h3>
         <p style='font-size: 15px; margin-bottom: 0;'>$teacherComment</p>
     </div> <br>
 
@@ -457,10 +464,11 @@ $progress = getStudentProgress($student_id, $school_id, $conn);
 $chartUrl = generateProgressChart($progress);
 
 if ($chartUrl) {
-    $html .= "
-    <div style='text-align:center; margin:10px 0;'>
-        <img src='{$chartUrl}' style='width:100%; max-width:450px; height:auto;' />
+   $html .= "
+    <div style='margin: 0;'>
+        <img src='{$chartUrl}' style='width:100%; max-width:450px; height:auto; display:block;' />
     </div>";
+
 }
 
 // Signatures at bottom

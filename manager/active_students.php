@@ -117,6 +117,15 @@ if ($check_res->num_rows > 0) {
 }
 ?>
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+    <title>Document</title>
+</head>
+
 <div class="container">
 
     <h2 class="mb-4">Promotion Tracking for <?= $current_year ?></h2>
@@ -155,3 +164,4 @@ if ($check_res->num_rows > 0) {
     ?>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

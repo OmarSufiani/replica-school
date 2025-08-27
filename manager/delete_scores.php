@@ -160,7 +160,9 @@ $exam_types = ["CAT", "Mid Term", "End Term"];
 <head>
     <title>Manage Scores</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
 </head>
 <body class="bg-light">
 <div class="container mt-5">
@@ -311,6 +313,6 @@ $exam_types = ["CAT", "Mid Term", "End Term"];
         }
     }, 3000);
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+
